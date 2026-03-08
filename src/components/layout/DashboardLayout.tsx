@@ -12,8 +12,9 @@ import SettingsView from '@/components/dashboard/SettingsView';
 import ProfileView from '@/components/dashboard/ProfileView';
 import AdminAnalyticsView from '@/components/dashboard/AdminAnalyticsView';
 import StudentTrackingView from '@/components/dashboard/StudentTrackingView';
+import AuditLogsView from '@/components/dashboard/AuditLogsView';
 
-export type PageId = 'dashboard' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'settings' | 'profile';
+export type PageId = 'dashboard' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'settings' | 'profile';
 
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
@@ -34,6 +35,8 @@ export default function DashboardLayout() {
         return <AdminAnalyticsView />;
       case 'tracking':
         return <StudentTrackingView />;
+      case 'audit-logs':
+        return <AuditLogsView />;
       case 'settings':
         return <SettingsView />;
       case 'profile':

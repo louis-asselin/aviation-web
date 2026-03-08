@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { gdprApi } from '@/lib/api';
+import { gdprApi, twoFactorApi } from '@/lib/api';
 import {
-  Settings, Shield, FileText, Download, Trash2, KeyRound,
-  AlertTriangle, CheckCircle2, Eye, EyeOff
+  Shield, FileText, Download, Trash2, KeyRound,
+  AlertTriangle, CheckCircle2, Eye, EyeOff, Smartphone
 } from 'lucide-react';
 
 export default function SettingsView() {
@@ -20,6 +20,77 @@ export default function SettingsView() {
   const [isExporting, setIsExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // 2FA states
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [showSetup2FA, setShowSetup2FA] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [twoFactorMessage, setTwoFactorMessage] = useState<{ type: string; text: string } | null>(null);
+  const [is2FALoading, setIs2FALoading] = useState(false);
+  const [showDisable2FA, setShowDisable2FA] = useState(false);
+  const [disableCode, setDisableCode] = useState('');
+
+  // Load 2FA status
+  useEffect(() => {
+    if (!token) return;
+    twoFactorApi.status(token).then(data => {
+      setTwoFactorEnabled(data.twoFactorEnabled);
+    }).catch(() => {});
+  }, [token]);
+
+  const handleSetup2FA = async () => {
+    if (!token) return;
+    setIs2FALoading(true);
+    setTwoFactorMessage(null);
+    try {
+      const data = await twoFactorApi.setup(token);
+      setQrCodeUrl(data.qrCodeUrl);
+      setShowSetup2FA(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to setup 2FA.';
+      setTwoFactorMessage({ type: 'error', text: message });
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const handleConfirm2FA = async () => {
+    if (!token || twoFactorCode.length !== 6) return;
+    setIs2FALoading(true);
+    setTwoFactorMessage(null);
+    try {
+      await twoFactorApi.confirm(twoFactorCode, token);
+      setTwoFactorEnabled(true);
+      setShowSetup2FA(false);
+      setTwoFactorCode('');
+      setQrCodeUrl('');
+      setTwoFactorMessage({ type: 'success', text: '2FA enabled successfully.' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid code.';
+      setTwoFactorMessage({ type: 'error', text: message });
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!token || disableCode.length !== 6) return;
+    setIs2FALoading(true);
+    setTwoFactorMessage(null);
+    try {
+      await twoFactorApi.disable(disableCode, token);
+      setTwoFactorEnabled(false);
+      setShowDisable2FA(false);
+      setDisableCode('');
+      setTwoFactorMessage({ type: 'success', text: '2FA disabled.' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid code.';
+      setTwoFactorMessage({ type: 'error', text: message });
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +221,109 @@ export default function SettingsView() {
           <button onClick={() => setShowPasswordForm(true)} className="btn-secondary">
             Change Password
           </button>
+        )}
+      </div>
+
+      {/* Two-Factor Authentication */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <Smartphone className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Two-Factor Authentication</h2>
+        </div>
+
+        {twoFactorMessage && (
+          <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
+            twoFactorMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          }`}>
+            {twoFactorMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            {twoFactorMessage.text}
+          </div>
+        )}
+
+        {twoFactorEnabled ? (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-50 px-3 py-1 rounded-full">
+                <CheckCircle2 className="w-4 h-4" /> Enabled
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Your account is protected with two-factor authentication.
+            </p>
+
+            {showDisable2FA ? (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">Enter your authenticator code to disable 2FA</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={disableCode}
+                  onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ''))}
+                  className="input-field text-center text-lg tracking-widest font-mono max-w-xs"
+                  placeholder="000000"
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => { setShowDisable2FA(false); setDisableCode(''); }} className="btn-secondary">Cancel</button>
+                  <button
+                    onClick={handleDisable2FA}
+                    disabled={is2FALoading || disableCode.length !== 6}
+                    className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg"
+                  >
+                    {is2FALoading ? 'Disabling...' : 'Disable 2FA'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setShowDisable2FA(true)} className="btn-secondary text-red-600">
+                Disable 2FA
+              </button>
+            )}
+          </div>
+        ) : showSetup2FA ? (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
+            </p>
+            {qrCodeUrl && (
+              <div className="flex justify-center">
+                <img src={qrCodeUrl} alt="2FA QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Enter the 6-digit code from your app</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                className="input-field text-center text-lg tracking-widest font-mono max-w-xs"
+                placeholder="000000"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setShowSetup2FA(false); setTwoFactorCode(''); }} className="btn-secondary">Cancel</button>
+              <button
+                onClick={handleConfirm2FA}
+                disabled={is2FALoading || twoFactorCode.length !== 6}
+                className="btn-primary"
+              >
+                {is2FALoading ? 'Verifying...' : 'Confirm & Enable'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-gray-500 mb-4">
+              Add an extra layer of security by enabling two-factor authentication with an authenticator app.
+            </p>
+            <button onClick={handleSetup2FA} disabled={is2FALoading} className="btn-primary">
+              {is2FALoading ? 'Setting up...' : 'Enable 2FA'}
+            </button>
+          </div>
         )}
       </div>
 

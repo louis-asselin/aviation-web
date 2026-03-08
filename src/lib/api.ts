@@ -163,6 +163,44 @@ export const analyticsApi = {
     api<OrgAnalytics>(`/analytics/org/${orgId}/overview`, { token }),
 };
 
+// Two-Factor Authentication endpoints
+export const twoFactorApi = {
+  setup: (token: string) =>
+    api<{ qrCodeUrl: string; secret: string }>('/2fa/setup', { method: 'POST', token }),
+
+  confirm: (code: string, token: string) =>
+    api('/2fa/confirm', { method: 'POST', body: { code }, token }),
+
+  validate: (code: string, tempToken: string) =>
+    api<{ user: User; tokens: { accessToken: string; refreshToken: string; expiresIn: number } }>('/2fa/validate', {
+      method: 'POST',
+      body: { code, tempToken },
+    }),
+
+  disable: (code: string, token: string) =>
+    api('/2fa/disable', { method: 'POST', body: { code }, token }),
+
+  status: (token: string) =>
+    api<{ twoFactorEnabled: boolean }>('/2fa/status', { token }),
+};
+
+// Audit Logs endpoints (admin only)
+export const auditLogsApi = {
+  list: (token: string, params?: { page?: number; limit?: number; eventType?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.eventType) searchParams.set('eventType', params.eventType);
+    const qs = searchParams.toString();
+    return api<{ logs: AuditLog[]; total: number; page: number; limit: number }>(
+      `/audit-logs${qs ? `?${qs}` : ''}`, { token }
+    );
+  },
+
+  eventTypes: (token: string) =>
+    api<string[]>('/audit-logs/event-types', { token }),
+};
+
 // Student Tracking endpoints
 export const studentTrackingApi = {
   // Load students from org members, filtered client-side for students
@@ -190,6 +228,7 @@ export interface User {
   country?: string;
   profilePhotoUrl?: string;
   mustChangePassword: boolean;
+  twoFactorEnabled?: boolean;
   acceptedTermsAt?: string;
   isActive: boolean;
   createdAt: string;
@@ -306,4 +345,18 @@ export interface TrackingStudent {
   promotion?: string;
   assignedProgram?: string;
   gender?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  eventType: string;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
 }

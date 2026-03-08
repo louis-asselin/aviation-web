@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, gdprApi, User, ApiError } from '@/lib/api';
+import { authApi, gdprApi, twoFactorApi, User, ApiError } from '@/lib/api';
 
 interface AuthState {
   user: User | null;
@@ -9,10 +9,14 @@ interface AuthState {
   refreshToken: string | null;
   isLoading: boolean;
   needsTermsAcceptance: boolean;
+  requiresTwoFactor: boolean;
+  tempToken: string | null;
 }
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  verifyTwoFactor: (code: string) => Promise<void>;
+  cancelTwoFactor: () => void;
   logout: () => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   acceptTerms: () => Promise<void>;
@@ -31,6 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshToken: null,
     isLoading: true,
     needsTermsAcceptance: false,
+    requiresTwoFactor: false,
+    tempToken: null,
   });
 
   // Restore session from localStorage
@@ -48,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshToken: refreshTokenStored,
           isLoading: false,
           needsTermsAcceptance: !user.acceptedTermsAt,
+          requiresTwoFactor: false,
+          tempToken: null,
         });
       } catch {
         localStorage.clear();
@@ -59,7 +67,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await authApi.login(email, password);
+    const data = await authApi.login(email, password) as Record<string, unknown>;
+
+    // Check if 2FA is required
+    if (data.requiresTwoFactor) {
+      setState(prev => ({
+        ...prev,
+        requiresTwoFactor: true,
+        tempToken: data.tempToken as string,
+        isLoading: false,
+      }));
+      return;
+    }
+
+    const { user, tokens } = data as { user: User; tokens: { accessToken: string; refreshToken: string; expiresIn: number } };
+    const token = tokens.accessToken;
+    const refreshTokenValue = tokens.refreshToken;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refreshTokenValue);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    setState({
+      user,
+      token,
+      refreshToken: refreshTokenValue,
+      isLoading: false,
+      needsTermsAcceptance: !user.acceptedTermsAt,
+      requiresTwoFactor: false,
+      tempToken: null,
+    });
+  }, []);
+
+  const verifyTwoFactor = useCallback(async (code: string) => {
+    if (!state.tempToken) throw new Error('No 2FA session active');
+
+    const data = await twoFactorApi.validate(code, state.tempToken);
     const { user, tokens } = data;
     const token = tokens.accessToken;
     const refreshTokenValue = tokens.refreshToken;
@@ -74,7 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: refreshTokenValue,
       isLoading: false,
       needsTermsAcceptance: !user.acceptedTermsAt,
+      requiresTwoFactor: false,
+      tempToken: null,
     });
+  }, [state.tempToken]);
+
+  const cancelTwoFactor = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      requiresTwoFactor: false,
+      tempToken: null,
+    }));
   }, []);
 
   const logout = useCallback(() => {
@@ -87,6 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: null,
       isLoading: false,
       needsTermsAcceptance: false,
+      requiresTwoFactor: false,
+      tempToken: null,
     });
   }, []);
 
@@ -131,6 +186,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         login,
+        verifyTwoFactor,
+        cancelTwoFactor,
         logout,
         changePassword,
         acceptTerms,

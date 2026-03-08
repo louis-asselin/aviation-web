@@ -2,12 +2,13 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import LoginPage from './login/page';
+import TwoFactorInput from '@/components/auth/TwoFactorInput';
 import ForceChangePassword from '@/components/auth/ForceChangePassword';
 import TermsAcceptance from '@/components/auth/TermsAcceptance';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function Home() {
-  const { user, isLoading, mustChangePassword, needsTermsAcceptance, hasAcceptedTerms } = useAuth();
+  const { user, isLoading, mustChangePassword, needsTermsAcceptance, hasAcceptedTerms, requiresTwoFactor } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,6 +19,11 @@ export default function Home() {
         </div>
       </div>
     );
+  }
+
+  // 2FA verification required
+  if (requiresTwoFactor) {
+    return <TwoFactorInput />;
   }
 
   // Not logged in → show login
