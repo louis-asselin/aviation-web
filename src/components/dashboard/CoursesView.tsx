@@ -37,6 +37,7 @@ export default function CoursesView() {
   const [viewingFile, setViewingFile] = useState<FileMetadata | null>(null);
   const [viewingExam, setViewingExam] = useState<string | number | null>(null);
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const loadData = () => {
     if (!token) return;
@@ -98,7 +99,9 @@ export default function CoursesView() {
         coursesApi.modules(course.id, token),
         filesApi.listByCourse(course.id, token),
       ]);
-      setModules(Array.isArray(modulesData) ? modulesData : []);
+      const mods = Array.isArray(modulesData) ? modulesData : [];
+      console.log('[openCourse] modules received:', JSON.stringify(mods.map(m => ({ id: m.id, title: m.title, examId: m.examId, fileCount: m.fileCount, questionCount: m.questionCount }))));
+      setModules(mods);
       // Course-level files = files without a module_id
       const allFiles = Array.isArray(filesData) ? filesData : [];
       setCourseFiles(allFiles.filter(f => !f.moduleId));
@@ -113,12 +116,17 @@ export default function CoursesView() {
     if (!token) return;
     setSelectedModule(module);
     setViewingFile(null);
+    setFileError(null);
     setIsLoadingFiles(true);
     try {
       const data = await filesApi.listByModule(module.id, token);
+      console.log(`[openModule] module ${module.id} files:`, data);
       setModuleFiles(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load module files:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to load files';
+      setFileError(msg);
+      setModuleFiles([]);
     } finally {
       setIsLoadingFiles(false);
     }
@@ -241,7 +249,7 @@ export default function CoursesView() {
         ) : moduleFiles.length === 0 ? (
           <div className="card text-center py-8">
             <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No documents in this module.</p>
+            <p className="text-gray-500">{fileError ? `Error: ${fileError}` : 'No documents in this module.'}</p>
           </div>
         ) : (
           <div className="space-y-3">
