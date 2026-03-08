@@ -161,6 +161,20 @@ export default function AdminOrgsView() {
     } catch (err) { console.error('Toggle failed:', err); }
   };
 
+  const deleteOrg = async (org: Organization, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!token) return;
+    if (!confirm(`Supprimer définitivement l'organisation "${org.name}" ?\n\nCette action est irréversible. Si l'organisation contient des cours, la suppression sera refusée.\n\nPour simplement retirer l'accès aux membres, utilisez plutôt la désactivation.`)) return;
+    try {
+      await orgsApi.delete(org.id, token);
+      if (selectedOrg?.id === org.id) setSelectedOrg(null);
+      setIsLoading(true);
+      loadOrgs();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+    }
+  };
+
   // Course CRUD within org
   const openCreateCourse = () => {
     if (!selectedOrg) return;
@@ -285,8 +299,14 @@ export default function AdminOrgsView() {
             <p className="text-sm text-gray-500">Code: {selectedOrg.code} • {orgCourses.length} cours</p>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => toggleActive(selectedOrg)} className="p-2 hover:bg-gray-100 rounded-lg" title={selectedOrg.isActive !== false ? 'Désactiver' : 'Activer'}>
+              {selectedOrg.isActive !== false ? <ToggleRight className="w-5 h-5 text-green-500" /> : <ToggleLeft className="w-5 h-5 text-gray-400" />}
+            </button>
             <button onClick={() => openEditOrg(selectedOrg)} className="p-2 hover:bg-gray-100 rounded-lg" title="Modifier">
               <Pencil className="w-4 h-4 text-gray-500" />
+            </button>
+            <button onClick={(e) => deleteOrg(selectedOrg, e)} className="p-2 hover:bg-red-50 rounded-lg" title="Supprimer définitivement">
+              <Trash2 className="w-4 h-4 text-red-500" />
             </button>
             <button onClick={openCreateCourse} className="btn-primary flex items-center gap-2 text-sm">
               <Plus className="w-4 h-4" /> Ajouter un cours
@@ -463,6 +483,9 @@ export default function AdminOrgsView() {
                       </button>
                       <button onClick={(e) => toggleActive(org, e)} className="p-2 hover:bg-gray-100 rounded-lg" title={org.isActive !== false ? 'Désactiver' : 'Activer'}>
                         {org.isActive !== false ? <ToggleRight className="w-5 h-5 text-green-500" /> : <ToggleLeft className="w-5 h-5 text-gray-400" />}
+                      </button>
+                      <button onClick={(e) => deleteOrg(org, e)} className="p-2 hover:bg-red-50 rounded-lg" title="Supprimer définitivement">
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors" />

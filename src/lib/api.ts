@@ -146,6 +146,9 @@ export const orgsApi = {
 
   update: (id: number, data: Partial<Organization & { isActive?: boolean; description?: string }>, token: string) =>
     api<Organization>(`/organizations/${id}`, { method: 'PUT', body: data, token }),
+
+  delete: (id: number, token: string) =>
+    api<{ message: string }>(`/organizations/${id}`, { method: 'DELETE', token }),
 };
 
 // Users endpoints (admin) — backend returns direct arrays
