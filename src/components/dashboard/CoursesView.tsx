@@ -197,17 +197,17 @@ export default function CoursesView() {
             <p className="text-xs text-gray-500">{formatFileSize(viewingFile.sizeBytes)}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }} onContextMenu={e => e.preventDefault()}>
           {!fileBlobUrl ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
             </div>
           ) : isPdf ? (
-            <embed
-              src={fileBlobUrl}
-              type="application/pdf"
+            <iframe
+              src={`${fileBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
               className="w-full h-full"
               title={viewingFile.originalName}
+              style={{ border: 'none' }}
             />
           ) : isImage ? (
             <div className="w-full h-full flex items-center justify-center bg-gray-50 p-4">
