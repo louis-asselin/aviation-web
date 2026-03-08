@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface ModuleExamViewProps {
-  examId: number;
+  examId: string | number;
   moduleTitle: string;
   onBack: () => void;
 }

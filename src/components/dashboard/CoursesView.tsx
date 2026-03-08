@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, filesApi, orgsApi, Course, Module, FileMetadata, Organization } from '@/lib/api';
 import { BookOpen, ChevronRight, FileText, ArrowLeft, Users, AlertTriangle, Eye, File, FileImage, FileSpreadsheet, HelpCircle } from 'lucide-react';
@@ -35,7 +35,8 @@ export default function CoursesView() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [suspendedOrgs, setSuspendedOrgs] = useState<Organization[]>([]);
   const [viewingFile, setViewingFile] = useState<FileMetadata | null>(null);
-  const [viewingExam, setViewingExam] = useState<number | null>(null);
+  const [viewingExam, setViewingExam] = useState<string | number | null>(null);
+  const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
 
   const loadData = () => {
     if (!token) return;
@@ -130,6 +131,34 @@ export default function CoursesView() {
   // ==========================================
   // VIEW: Inline file viewer (PDF / Image)
   // ==========================================
+  // Load image as blob when viewingFile changes (avoids CORS/token issues with <img src>)
+  useEffect(() => {
+    if (!viewingFile || !viewingFile.mimeType?.includes('image') || !token) {
+      setImageBlobUrl(null);
+      return;
+    }
+    let revoked = false;
+    const url = getFileUrl(viewingFile);
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load image');
+        return res.blob();
+      })
+      .then(blob => {
+        if (!revoked) {
+          setImageBlobUrl(URL.createObjectURL(blob));
+        }
+      })
+      .catch(err => {
+        console.error('Image load error:', err);
+        if (!revoked) setImageBlobUrl(null);
+      });
+    return () => {
+      revoked = true;
+      setImageBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+    };
+  }, [viewingFile, token]);
+
   if (viewingFile) {
     const url = getFileUrl(viewingFile);
     const isPdf = viewingFile.mimeType?.includes('pdf');
@@ -158,11 +187,15 @@ export default function CoursesView() {
             />
           ) : isImage ? (
             <div className="w-full h-full flex items-center justify-center bg-gray-50 p-4">
-              <img
-                src={url}
-                alt={viewingFile.originalName}
-                className="max-w-full max-h-full object-contain rounded-lg"
-              />
+              {imageBlobUrl ? (
+                <img
+                  src={imageBlobUrl}
+                  alt={viewingFile.originalName}
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+              ) : (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">

@@ -99,34 +99,34 @@ export const coursesApi = {
   enrollments: (token: string) =>
     api<Enrollment[]>('/courses/enrollments/me', { token }),
 
-  get: (id: number, token: string) =>
+  get: (id: string | number, token: string) =>
     api<Course>(`/courses/${id}`, { token }),
 
-  modules: (courseId: number, token: string) =>
+  modules: (courseId: string | number, token: string) =>
     api<Module[]>(`/courses/${courseId}/modules`, { token }),
 
-  progress: (courseId: number, token: string) =>
+  progress: (courseId: string | number, token: string) =>
     api(`/courses/${courseId}/progress`, { token }),
 
-  create: (data: { title: string; description: string; organizationId: number; subject?: string; level?: string; contentType?: string }, token: string) =>
+  create: (data: { title: string; description: string; organizationId: string | number; subject?: string; level?: string; contentType?: string }, token: string) =>
     api<Course>('/courses', { method: 'POST', body: data, token }),
 
-  update: (id: number, data: Partial<Course>, token: string) =>
+  update: (id: string | number, data: Partial<Course>, token: string) =>
     api<Course>(`/courses/${id}`, { method: 'PUT', body: data, token }),
 
-  delete: (id: number, token: string) =>
+  delete: (id: string | number, token: string) =>
     api(`/courses/${id}`, { method: 'DELETE', token }),
 
-  createModule: (courseId: number, data: { title: string; description?: string; orderIndex?: number }, token: string) =>
+  createModule: (courseId: string | number, data: { title: string; description?: string; orderIndex?: number }, token: string) =>
     api<Module>(`/courses/${courseId}/modules`, { method: 'POST', body: data, token }),
 
-  updateModule: (courseId: number, moduleId: number, data: Partial<Module>, token: string) =>
+  updateModule: (courseId: string | number, moduleId: string | number, data: Partial<Module>, token: string) =>
     api<Module>(`/courses/${courseId}/modules/${moduleId}`, { method: 'PUT', body: data, token }),
 
-  deleteModule: (courseId: number, moduleId: number, token: string) =>
+  deleteModule: (courseId: string | number, moduleId: string | number, token: string) =>
     api(`/courses/${courseId}/modules/${moduleId}`, { method: 'DELETE', token }),
 
-  reorderModules: (courseId: number, moduleIds: number[], token: string) =>
+  reorderModules: (courseId: string | number, moduleIds: (string | number)[], token: string) =>
     api(`/courses/${courseId}/modules/reorder`, { method: 'PUT', body: { moduleIds }, token }),
 };
 
@@ -203,13 +203,13 @@ export const examsApi = {
     return api<Exam[]>(`/exams${qs ? `?${qs}` : ''}`, { token });
   },
 
-  get: (id: number, token: string) =>
+  get: (id: string | number, token: string) =>
     api<Exam>(`/exams/${id}`, { token }),
 
-  getQuestions: (examId: number, token: string) =>
+  getQuestions: (examId: string | number, token: string) =>
     api<Question[]>(`/exams/${examId}/questions`, { token }),
 
-  addQuestion: (examId: number, data: {
+  addQuestion: (examId: string | number, data: {
     text: string;
     type?: string;
     options: { text: string; label: string }[];
@@ -218,7 +218,7 @@ export const examsApi = {
   }, token: string) =>
     api<Question>(`/exams/${examId}/questions`, { method: 'POST', body: data, token }),
 
-  updateQuestion: (examId: number, questionId: number, data: {
+  updateQuestion: (examId: string | number, questionId: string | number, data: {
     text?: string;
     type?: string;
     options?: { text: string; label: string }[];
@@ -227,17 +227,17 @@ export const examsApi = {
   }, token: string) =>
     api<Question>(`/exams/${examId}/questions/${questionId}`, { method: 'PUT', body: data, token }),
 
-  deleteQuestion: (examId: number, questionId: number, token: string) =>
+  deleteQuestion: (examId: string | number, questionId: string | number, token: string) =>
     api(`/exams/${examId}/questions/${questionId}`, { method: 'DELETE', token }),
 
-  update: (id: number, data: Partial<Exam>, token: string) =>
+  update: (id: string | number, data: Partial<Exam>, token: string) =>
     api<Exam>(`/exams/${id}`, { method: 'PUT', body: data, token }),
 
   // Module-level question endpoints
-  moduleQuestions: (moduleId: number, token: string) =>
+  moduleQuestions: (moduleId: string | number, token: string) =>
     api<Question[]>(`/exams/module/${moduleId}/questions`, { token }),
 
-  addModuleQuestion: (moduleId: number, data: {
+  addModuleQuestion: (moduleId: string | number, data: {
     text: string;
     type?: string;
     options: { text: string; label: string }[];
@@ -247,7 +247,7 @@ export const examsApi = {
     api<Question>(`/exams/module/${moduleId}/questions`, { method: 'POST', body: data, token }),
 
   // Attempt endpoints
-  startAttempt: (examId: number, token: string) =>
+  startAttempt: (examId: string | number, token: string) =>
     api<ExamAttempt>(`/exams/${examId}/attempt`, { method: 'POST', token }),
 
   submitAttempt: (attemptId: string, answers: { questionId: string; selectedOptionId: string; timeTakenSec?: number }[], token: string) =>
@@ -259,7 +259,7 @@ export const examsApi = {
 
 // Files endpoints
 export const filesApi = {
-  upload: async (file: File, courseId: number, moduleId: number | null, token: string) => {
+  upload: async (file: File, courseId: string | number, moduleId: string | number | null, token: string) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('courseId', String(courseId));
@@ -277,16 +277,16 @@ export const filesApi = {
     return response.json() as Promise<FileMetadata>;
   },
 
-  listByCourse: (courseId: number, token: string) =>
+  listByCourse: (courseId: string | number, token: string) =>
     api<FileMetadata[]>(`/files/course/${courseId}`, { token }),
 
-  listByModule: (moduleId: number, token: string) =>
+  listByModule: (moduleId: string | number, token: string) =>
     api<FileMetadata[]>(`/files/module/${moduleId}`, { token }),
 
-  rename: (fileId: number, newName: string, token: string) =>
+  rename: (fileId: string | number, newName: string, token: string) =>
     api(`/files/${fileId}/rename`, { method: 'PUT', body: { newName }, token }),
 
-  delete: (fileId: number, token: string) =>
+  delete: (fileId: string | number, token: string) =>
     api(`/files/${fileId}`, { method: 'DELETE', token }),
 
   downloadUrl: (fileId: number) => `${API_BASE}/files/${fileId}/download`,
@@ -461,8 +461,8 @@ export interface Enrollment {
 }
 
 export interface Module {
-  id: number;
-  courseId: number;
+  id: number | string;
+  courseId: number | string;
   title: string;
   description: string;
   orderIndex: number;
@@ -471,15 +471,15 @@ export interface Module {
   contentType?: string;
   durationMin?: number;
   progress?: number;
-  examId?: number;
+  examId?: string | number | null;
   fileCount?: number;
   questionCount?: number;
 }
 
 export interface Exam {
-  id: number;
-  courseId: number;
-  moduleId?: number;
+  id: number | string;
+  courseId: number | string;
+  moduleId?: number | string;
   title: string;
   description?: string;
   subject?: string;
@@ -492,8 +492,8 @@ export interface Exam {
 }
 
 export interface Question {
-  id: number;
-  examId: number;
+  id: number | string;
+  examId: number | string;
   text: string;
   type: string;
   options: QuestionOption[];
