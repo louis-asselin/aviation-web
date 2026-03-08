@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, filesApi, orgsApi, Course, Module, FileMetadata, Organization } from '@/lib/api';
-import { BookOpen, ChevronRight, FileText, ArrowLeft, Clock, Users, AlertTriangle, Download, Eye, File, FileImage, FileSpreadsheet } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { BookOpen, ChevronRight, FileText, ArrowLeft, Users, AlertTriangle, Download, Eye, File, FileImage, FileSpreadsheet } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://spirited-friendship-production-fb20.up.railway.app/api';
 
@@ -27,7 +26,7 @@ export default function CoursesView() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  // selectedModule removed - files are shown at course level like iOS
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
@@ -59,30 +58,21 @@ export default function CoursesView() {
   const openCourse = async (course: Course) => {
     if (!token) return;
     setSelectedCourse(course);
-    setSelectedModule(null);
-    setFiles([]);
-    setIsLoadingModules(true);
-    try {
-      const data = await coursesApi.modules(course.id, token);
-      setModules(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load modules:', err);
-    } finally {
-      setIsLoadingModules(false);
-    }
-  };
-
-  const openModule = async (module: Module) => {
-    if (!token) return;
-    setSelectedModule(module);
     setPreviewUrl(null);
+    setIsLoadingModules(true);
     setIsLoadingFiles(true);
     try {
-      const data = await filesApi.listByModule(module.id, token);
-      setFiles(Array.isArray(data) ? data : []);
+      // Load modules AND course files in parallel (like iOS does)
+      const [modulesData, filesData] = await Promise.all([
+        coursesApi.modules(course.id, token),
+        filesApi.listByCourse(course.id, token),
+      ]);
+      setModules(Array.isArray(modulesData) ? modulesData : []);
+      setFiles(Array.isArray(filesData) ? filesData : []);
     } catch (err) {
-      console.error('Failed to load files:', err);
+      console.error('Failed to load course data:', err);
     } finally {
+      setIsLoadingModules(false);
       setIsLoadingFiles(false);
     }
   };
@@ -142,96 +132,13 @@ export default function CoursesView() {
     );
   }
 
-  // Module content view (files)
-  if (selectedCourse && selectedModule) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => { setSelectedModule(null); setFiles([]); }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">{selectedModule.title}</h1>
-            <p className="text-sm text-gray-500">{selectedCourse.title}</p>
-          </div>
-        </div>
-
-        {selectedModule.description && (
-          <div className="card">
-            <p className="text-sm text-gray-600">{selectedModule.description}</p>
-          </div>
-        )}
-
-        {/* Files */}
-        {isLoadingFiles ? (
-          <div className="space-y-3">
-            {[1, 2].map(i => (
-              <div key={i} className="card animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : files.length === 0 ? (
-          <div className="card text-center py-8">
-            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No documents available in this module.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700">{files.length} document{files.length !== 1 ? 's' : ''}</h2>
-            </div>
-            {files.map((file) => (
-              <div
-                key={file.id}
-                className="card hover:shadow-md transition-shadow flex items-center gap-4"
-              >
-                <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {getFileIcon(file.mimeType)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 truncate">{file.originalName}</h3>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
-                    <span>{formatFileSize(file.sizeBytes)}</span>
-                    <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {canPreview(file.mimeType) && (
-                    <button
-                      onClick={() => previewFile(file)}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Preview"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => downloadFile(file)}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Module list view for selected course
+  // Course detail view (modules + files, like iOS CourseDetailView)
   if (selectedCourse) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => { setSelectedCourse(null); setModules([]); }}
+            onClick={() => { setSelectedCourse(null); setModules([]); setFiles([]); }}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -256,6 +163,72 @@ export default function CoursesView() {
           </div>
         </div>
 
+        {/* Course Content (files) */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-accent-500" />
+              <h2 className="font-semibold text-gray-900">Course Content</h2>
+            </div>
+            {!isLoadingFiles && files.length > 0 && (
+              <span className="text-xs font-semibold text-white bg-accent-500 px-2 py-0.5 rounded-full">
+                {files.length}
+              </span>
+            )}
+          </div>
+
+          {isLoadingFiles ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="animate-pulse h-14 bg-gray-100 rounded-lg" />
+              ))}
+            </div>
+          ) : files.length === 0 ? (
+            <div className="text-center py-6">
+              <FileText className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No content available</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {files.map((file, index) => (
+                <div
+                  key={file.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
+                >
+                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {getFileIcon(file.mimeType)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                      <span>{formatFileSize(file.sizeBytes)}</span>
+                      <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {canPreview(file.mimeType) && (
+                      <button
+                        onClick={() => previewFile(file)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Preview"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => downloadFile(file)}
+                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Modules */}
         {isLoadingModules ? (
           <div className="space-y-3">
@@ -265,18 +238,13 @@ export default function CoursesView() {
               </div>
             ))}
           </div>
-        ) : modules.length === 0 ? (
-          <div className="card text-center py-8">
-            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No modules available for this course.</p>
-          </div>
-        ) : (
+        ) : modules.length > 0 && (
           <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-700">Modules</h2>
             {modules.sort((a, b) => a.orderIndex - b.orderIndex).map((module, index) => (
               <div
                 key={module.id}
-                onClick={() => openModule(module)}
-                className="card hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
+                className="card flex items-center gap-4"
               >
                 <div className="w-10 h-10 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="font-bold text-accent-500">{index + 1}</span>
@@ -302,7 +270,6 @@ export default function CoursesView() {
                       />
                     </div>
                   )}
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
             ))}
