@@ -60,7 +60,7 @@ export default function CoursesView() {
     return () => clearInterval(interval);
   }, [token]);
 
-  // Load file as blob when viewingFile changes (avoids CORS/token issues)
+  // Load file as blob/data URL when viewingFile changes (avoids CORS/token issues)
   useEffect(() => {
     if (!viewingFile || !token) {
       setFileBlobUrl(null);
@@ -81,9 +81,13 @@ export default function CoursesView() {
         return res.blob();
       })
       .then(blob => {
-        if (!cancelled) {
-          const blobUrl = URL.createObjectURL(blob);
-          setFileBlobUrl(blobUrl);
+        if (cancelled) return;
+        if (isPdf) {
+          // For PDFs: use blob URL with correct type
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          setFileBlobUrl(URL.createObjectURL(pdfBlob));
+        } else {
+          setFileBlobUrl(URL.createObjectURL(blob));
         }
       })
       .catch(err => {
@@ -199,8 +203,9 @@ export default function CoursesView() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
             </div>
           ) : isPdf ? (
-            <iframe
+            <embed
               src={fileBlobUrl}
+              type="application/pdf"
               className="w-full h-full"
               title={viewingFile.originalName}
             />
