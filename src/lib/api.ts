@@ -245,6 +245,16 @@ export const examsApi = {
     explanation?: string;
   }, token: string) =>
     api<Question>(`/exams/module/${moduleId}/questions`, { method: 'POST', body: data, token }),
+
+  // Attempt endpoints
+  startAttempt: (examId: number, token: string) =>
+    api<ExamAttempt>(`/exams/${examId}/attempt`, { method: 'POST', token }),
+
+  submitAttempt: (attemptId: string, answers: { questionId: string; selectedOptionId: string; timeTakenSec?: number }[], token: string) =>
+    api<ExamSubmitResult>(`/exams/attempts/${attemptId}/submit`, { method: 'PUT', body: { answers }, token }),
+
+  myAttempts: (token: string) =>
+    api<ExamAttempt[]>('/exams/attempts/me', { token }),
 };
 
 // Files endpoints
@@ -498,6 +508,31 @@ export interface QuestionOption {
   questionId: number;
   text: string;
   label: string;
+}
+
+export interface ExamAttempt {
+  id: string;
+  userId: string;
+  examId: string;
+  startedAt: string;
+  completedAt: string | null;
+  score: number | null;
+  correctCount: number | null;
+  totalQuestions: number;
+  durationSec: number | null;
+  examTitle?: string;
+}
+
+export interface ExamCorrection {
+  questionId: string;
+  selectedOptionId: string;
+  correctOptionId: string;
+  isCorrect: boolean;
+}
+
+export interface ExamSubmitResult {
+  attempt: ExamAttempt;
+  corrections: ExamCorrection[];
 }
 
 export interface FileMetadata {

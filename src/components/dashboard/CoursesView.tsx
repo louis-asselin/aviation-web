@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { coursesApi, filesApi, orgsApi, Course, Module, FileMetadata, Organization } from '@/lib/api';
-import { BookOpen, ChevronRight, FileText, ArrowLeft, Users, AlertTriangle, Download, Eye, File, FileImage, FileSpreadsheet } from 'lucide-react';
+import { BookOpen, ChevronRight, FileText, ArrowLeft, Users, AlertTriangle, Eye, File, FileImage, FileSpreadsheet, HelpCircle } from 'lucide-react';
+import ModuleExamView from './ModuleExamView';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://spirited-friendship-production-fb20.up.railway.app/api';
 
@@ -26,13 +27,15 @@ export default function CoursesView() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-  // selectedModule removed - files are shown at course level like iOS
-  const [files, setFiles] = useState<FileMetadata[]>([]);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [moduleFiles, setModuleFiles] = useState<FileMetadata[]>([]);
+  const [courseFiles, setCourseFiles] = useState<FileMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [suspendedOrgs, setSuspendedOrgs] = useState<Organization[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [viewingFile, setViewingFile] = useState<FileMetadata | null>(null);
+  const [viewingExam, setViewingExam] = useState<number | null>(null);
 
   const loadData = () => {
     if (!token) return;
@@ -58,40 +61,43 @@ export default function CoursesView() {
   const openCourse = async (course: Course) => {
     if (!token) return;
     setSelectedCourse(course);
-    setPreviewUrl(null);
+    setSelectedModule(null);
+    setViewingFile(null);
     setIsLoadingModules(true);
-    setIsLoadingFiles(true);
     try {
-      // Load modules AND course files in parallel (like iOS does)
+      // Load modules AND course-level files in parallel
       const [modulesData, filesData] = await Promise.all([
         coursesApi.modules(course.id, token),
         filesApi.listByCourse(course.id, token),
       ]);
       setModules(Array.isArray(modulesData) ? modulesData : []);
-      setFiles(Array.isArray(filesData) ? filesData : []);
+      // Course-level files = files without a module_id
+      const allFiles = Array.isArray(filesData) ? filesData : [];
+      setCourseFiles(allFiles.filter(f => !f.moduleId));
     } catch (err) {
       console.error('Failed to load course data:', err);
     } finally {
       setIsLoadingModules(false);
+    }
+  };
+
+  const openModule = async (module: Module) => {
+    if (!token) return;
+    setSelectedModule(module);
+    setViewingFile(null);
+    setIsLoadingFiles(true);
+    try {
+      const data = await filesApi.listByModule(module.id, token);
+      setModuleFiles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load module files:', err);
+    } finally {
       setIsLoadingFiles(false);
     }
   };
 
-  const downloadFile = (file: FileMetadata) => {
-    if (!token) return;
-    const url = `${API_BASE}/files/${file.id}/download`;
-    // Open in new tab with auth
-    window.open(url + `?token=${token}`, '_blank');
-  };
-
-  const previewFile = (file: FileMetadata) => {
-    if (!token) return;
-    const url = `${API_BASE}/files/${file.id}/download?token=${token}`;
-    setPreviewUrl(url);
-  };
-
-  const canPreview = (mimeType: string) => {
-    return mimeType?.includes('pdf') || mimeType?.includes('image');
+  const getFileUrl = (file: FileMetadata) => {
+    return `${API_BASE}/files/${file.id}/download?token=${token}`;
   };
 
   if (isLoading) {
@@ -108,37 +114,163 @@ export default function CoursesView() {
     );
   }
 
-  // File preview overlay
-  if (previewUrl) {
+  // ==========================================
+  // VIEW: Module Exam / Quiz
+  // ==========================================
+  if (viewingExam && selectedModule) {
+    return (
+      <ModuleExamView
+        examId={viewingExam}
+        moduleTitle={selectedModule.title}
+        onBack={() => setViewingExam(null)}
+      />
+    );
+  }
+
+  // ==========================================
+  // VIEW: Inline file viewer (PDF / Image)
+  // ==========================================
+  if (viewingFile) {
+    const url = getFileUrl(viewingFile);
+    const isPdf = viewingFile.mimeType?.includes('pdf');
+    const isImage = viewingFile.mimeType?.includes('image');
+
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setPreviewUrl(null)}
+            onClick={() => setViewingFile(null)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Document Preview</h1>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">{viewingFile.originalName}</h1>
+            <p className="text-xs text-gray-500">{formatFileSize(viewingFile.sizeBytes)}</p>
+          </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
-          <iframe
-            src={previewUrl}
-            className="w-full h-full"
-            title="File Preview"
-          />
+          {isPdf ? (
+            <iframe
+              src={url}
+              className="w-full h-full"
+              title={viewingFile.originalName}
+            />
+          ) : isImage ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-50 p-4">
+              <img
+                src={url}
+                alt={viewingFile.originalName}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-400">This file type cannot be previewed.</p>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Course detail view (modules + files, like iOS CourseDetailView)
+  // ==========================================
+  // VIEW: Module content (files inside a module)
+  // ==========================================
+  if (selectedCourse && selectedModule) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { setSelectedModule(null); setModuleFiles([]); setViewingExam(null); }}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{selectedModule.title}</h1>
+            <p className="text-sm text-gray-500">{selectedCourse.title}</p>
+          </div>
+        </div>
+
+        {selectedModule.description && (
+          <div className="card">
+            <p className="text-sm text-gray-600">{selectedModule.description}</p>
+          </div>
+        )}
+
+        {/* Module Files */}
+        {isLoadingFiles ? (
+          <div className="space-y-3">
+            {[1, 2].map(i => (
+              <div key={i} className="card animate-pulse h-16" />
+            ))}
+          </div>
+        ) : moduleFiles.length === 0 ? (
+          <div className="card text-center py-8">
+            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No documents in this module.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">{moduleFiles.length} document{moduleFiles.length !== 1 ? 's' : ''}</p>
+            {moduleFiles.map((file) => (
+              <div
+                key={file.id}
+                onClick={() => setViewingFile(file)}
+                className="card hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  {getFileIcon(file.mimeType)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                    <span>{formatFileSize(file.sizeBytes)}</span>
+                    <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
+                  </div>
+                </div>
+                <Eye className="w-5 h-5 text-gray-400" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Module Quiz */}
+        {selectedModule.examId && (selectedModule.questionCount ?? 0) > 0 && (
+          <div
+            onClick={() => setViewingExam(selectedModule.examId!)}
+            className="card hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-orange-400"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="w-6 h-6 text-orange-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">Module Quiz</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {selectedModule.questionCount} question{(selectedModule.questionCount ?? 0) > 1 ? 's' : ''}
+                </p>
+              </div>
+              <span className="px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg">
+                Start
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW: Course detail (modules list + course-level files)
+  // ==========================================
   if (selectedCourse) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => { setSelectedCourse(null); setModules([]); setFiles([]); }}
+            onClick={() => { setSelectedCourse(null); setModules([]); setCourseFiles([]); }}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -163,88 +295,25 @@ export default function CoursesView() {
           </div>
         </div>
 
-        {/* Course Content (files) */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-accent-500" />
-              <h2 className="font-semibold text-gray-900">Course Content</h2>
-            </div>
-            {!isLoadingFiles && files.length > 0 && (
-              <span className="text-xs font-semibold text-white bg-accent-500 px-2 py-0.5 rounded-full">
-                {files.length}
-              </span>
-            )}
-          </div>
-
-          {isLoadingFiles ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => (
-                <div key={i} className="animate-pulse h-14 bg-gray-100 rounded-lg" />
-              ))}
-            </div>
-          ) : files.length === 0 ? (
-            <div className="text-center py-6">
-              <FileText className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">No content available</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {files.map((file, index) => (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all"
-                >
-                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {getFileIcon(file.mimeType)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
-                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
-                      <span>{formatFileSize(file.sizeBytes)}</span>
-                      <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {canPreview(file.mimeType) && (
-                      <button
-                        onClick={() => previewFile(file)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Preview"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => downloadFile(file)}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Modules */}
+        {/* Modules - clickable to see their files */}
         {isLoadingModules ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="card animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-              </div>
+              <div key={i} className="card animate-pulse h-16" />
             ))}
           </div>
-        ) : modules.length > 0 && (
+        ) : modules.length === 0 ? (
+          <div className="card text-center py-8">
+            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No modules available for this course.</p>
+          </div>
+        ) : (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-700">Modules</h2>
             {modules.sort((a, b) => a.orderIndex - b.orderIndex).map((module, index) => (
               <div
                 key={module.id}
-                className="card flex items-center gap-4"
+                onClick={() => openModule(module)}
+                className="card hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
               >
                 <div className="w-10 h-10 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="font-bold text-accent-500">{index + 1}</span>
@@ -256,13 +325,17 @@ export default function CoursesView() {
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  {module.pdfUrl && (
-                    <span className="badge bg-blue-100 text-blue-700">
-                      <FileText className="w-3 h-3 mr-1" />
-                      PDF
+                  {(module.fileCount ?? 0) > 0 && (
+                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                      {module.fileCount} file{(module.fileCount ?? 0) > 1 ? 's' : ''}
                     </span>
                   )}
-                  {module.progress !== undefined && (
+                  {(module.questionCount ?? 0) > 0 && (
+                    <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">
+                      {module.questionCount} Q
+                    </span>
+                  )}
+                  {module.progress !== undefined && module.progress > 0 && (
                     <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-green-500 rounded-full"
@@ -270,19 +343,55 @@ export default function CoursesView() {
                       />
                     </div>
                   )}
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Course-level files (not linked to any module) */}
+        {courseFiles.length > 0 && (
+          <div className="card">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-accent-500" />
+              <h2 className="font-semibold text-gray-900">Course Documents</h2>
+              <span className="text-xs font-semibold text-white bg-accent-500 px-2 py-0.5 rounded-full ml-auto">
+                {courseFiles.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {courseFiles.map((file) => (
+                <div
+                  key={file.id}
+                  onClick={() => setViewingFile(file)}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
+                >
+                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {getFileIcon(file.mimeType)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                      <span>{formatFileSize(file.sizeBytes)}</span>
+                      <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <Eye className="w-5 h-5 text-gray-400" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
     );
   }
 
-  // Courses list view
+  // ==========================================
+  // VIEW: Courses list
+  // ==========================================
   return (
     <div className="space-y-6">
-      {/* Suspended org banners */}
       {suspendedOrgs.map(org => (
         <div key={org.id} className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
           <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
@@ -334,7 +443,6 @@ export default function CoursesView() {
                 )}
               </div>
 
-              {/* Progress bar */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
