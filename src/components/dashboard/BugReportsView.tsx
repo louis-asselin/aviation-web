@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { bugReportsApi, BugReport } from '@/lib/api';
 import {
   Bug, ChevronLeft, ChevronRight, MessageSquare, AlertTriangle,
-  CheckCircle2, Clock, X
+  CheckCircle2, Clock, X, Send
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -151,21 +151,42 @@ export default function BugReportsView() {
               placeholder="Write a response (optional)..."
               className="input-field w-full min-h-[80px]"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {adminResponse.trim() && (
+                <button
+                  onClick={async () => {
+                    if (!token || !adminResponse.trim()) return;
+                    setIsUpdating(true);
+                    try {
+                      const updated = await bugReportsApi.update(selectedReport.id, {
+                        adminResponse: adminResponse,
+                      }, token);
+                      setReports(prev => prev.map(r => r.id === selectedReport.id ? updated : r));
+                      setSelectedReport(updated);
+                      setAdminResponse('');
+                    } catch {}
+                    setIsUpdating(false);
+                  }}
+                  disabled={isUpdating}
+                  className="btn-primary text-sm flex items-center gap-1"
+                >
+                  <Send className="w-3.5 h-3.5" /> Send Response
+                </button>
+              )}
               {selectedReport.status === 'open' && (
                 <button
                   onClick={() => handleUpdateStatus(selectedReport.id, 'in_progress')}
                   disabled={isUpdating}
                   className="btn-secondary text-sm flex items-center gap-1"
                 >
-                  <Clock className="w-3.5 h-3.5" /> Mark In Progress
+                  <Clock className="w-3.5 h-3.5" /> In Progress
                 </button>
               )}
               {(selectedReport.status === 'open' || selectedReport.status === 'in_progress') && (
                 <button
                   onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
                   disabled={isUpdating}
-                  className="btn-primary text-sm flex items-center gap-1"
+                  className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-3 rounded-lg flex items-center gap-1"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> Resolve
                 </button>

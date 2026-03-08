@@ -2,8 +2,9 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { PageId } from './DashboardLayout';
-import { Menu, Bell, User, Search } from 'lucide-react';
+import { Menu, User, Search } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+import NotificationCenter from '@/components/dashboard/NotificationCenter';
 
 interface TopBarProps {
   onMenuToggle: () => void;
@@ -36,10 +37,7 @@ export default function TopBar({ onMenuToggle, onNavigate }: TopBarProps) {
 
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <NotificationCenter />
 
         {/* Profile */}
         <button

@@ -347,6 +347,29 @@ export const bugReportsApi = {
     api(`/bug-reports/${id}`, { method: 'DELETE', token }),
 };
 
+// Notifications
+export const notificationsApi = {
+  list: (token: string, params?: { page?: number; unreadOnly?: boolean }) => {
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.unreadOnly) sp.set('unreadOnly', 'true');
+    const qs = sp.toString();
+    return api<{ notifications: Notification[]; total: number; unreadCount: number }>(
+      `/notifications${qs ? `?${qs}` : ''}`, { token }
+    );
+  },
+  unreadCount: (token: string) =>
+    api<{ unreadCount: number }>('/notifications/unread-count', { token }),
+  markRead: (id: string, token: string) =>
+    api(`/notifications/${id}/read`, { method: 'PUT', token }),
+  markAllRead: (token: string) =>
+    api('/notifications/read-all', { method: 'PUT', token }),
+  delete: (id: string, token: string) =>
+    api(`/notifications/${id}`, { method: 'DELETE', token }),
+  deleteAll: (token: string) =>
+    api('/notifications', { method: 'DELETE', token }),
+};
+
 // Student Tracking endpoints
 export const studentTrackingApi = {
   // Load students from org members, filtered client-side for students
@@ -570,6 +593,19 @@ export interface BugReport {
   userName: string | null;
   userEmail: string | null;
   userRole: string | null;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  referenceType: string | null;
+  referenceId: string | null;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuditLog {

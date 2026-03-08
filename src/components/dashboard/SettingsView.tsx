@@ -412,6 +412,7 @@ export default function SettingsView() {
                         deviceInfo,
                       }, token);
                       setBugMessage({ type: 'success', text: 'Bug report submitted. Thank you!' });
+                      setTimeout(() => setBugMessage(null), 4000);
                       setShowBugForm(false);
                       setBugTitle('');
                       setBugDescription('');
