@@ -190,6 +190,95 @@ export const analyticsApi = {
     api<OrgAnalytics>(`/analytics/org/${orgId}/overview`, { token }),
 };
 
+// Exams endpoints
+export const examsApi = {
+  list: (token: string, params?: { courseId?: number; moduleId?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.courseId) sp.set('courseId', String(params.courseId));
+    if (params?.moduleId) sp.set('moduleId', String(params.moduleId));
+    const qs = sp.toString();
+    return api<Exam[]>(`/exams${qs ? `?${qs}` : ''}`, { token });
+  },
+
+  get: (id: number, token: string) =>
+    api<Exam>(`/exams/${id}`, { token }),
+
+  getQuestions: (examId: number, token: string) =>
+    api<Question[]>(`/exams/${examId}/questions`, { token }),
+
+  addQuestion: (examId: number, data: {
+    text: string;
+    type?: string;
+    options: { text: string; label: string }[];
+    correctOptionId: string;
+    explanation?: string;
+  }, token: string) =>
+    api<Question>(`/exams/${examId}/questions`, { method: 'POST', body: data, token }),
+
+  updateQuestion: (examId: number, questionId: number, data: {
+    text?: string;
+    type?: string;
+    options?: { text: string; label: string }[];
+    correctOptionId?: string;
+    explanation?: string;
+  }, token: string) =>
+    api<Question>(`/exams/${examId}/questions/${questionId}`, { method: 'PUT', body: data, token }),
+
+  deleteQuestion: (examId: number, questionId: number, token: string) =>
+    api(`/exams/${examId}/questions/${questionId}`, { method: 'DELETE', token }),
+
+  update: (id: number, data: Partial<Exam>, token: string) =>
+    api<Exam>(`/exams/${id}`, { method: 'PUT', body: data, token }),
+
+  // Module-level question endpoints
+  moduleQuestions: (moduleId: number, token: string) =>
+    api<Question[]>(`/exams/module/${moduleId}/questions`, { token }),
+
+  addModuleQuestion: (moduleId: number, data: {
+    text: string;
+    type?: string;
+    options: { text: string; label: string }[];
+    correctOptionId: string;
+    explanation?: string;
+  }, token: string) =>
+    api<Question>(`/exams/module/${moduleId}/questions`, { method: 'POST', body: data, token }),
+};
+
+// Files endpoints
+export const filesApi = {
+  upload: async (file: File, courseId: number, moduleId: number | null, token: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('courseId', String(courseId));
+    if (moduleId) formData.append('moduleId', String(moduleId));
+
+    const response = await fetch(`${API_BASE}/files/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new ApiError(data.error || 'Upload failed', response.status);
+    }
+    return response.json() as Promise<FileMetadata>;
+  },
+
+  listByCourse: (courseId: number, token: string) =>
+    api<FileMetadata[]>(`/files/course/${courseId}`, { token }),
+
+  listByModule: (moduleId: number, token: string) =>
+    api<FileMetadata[]>(`/files/module/${moduleId}`, { token }),
+
+  rename: (fileId: number, newName: string, token: string) =>
+    api(`/files/${fileId}/rename`, { method: 'PUT', body: { newName }, token }),
+
+  delete: (fileId: number, token: string) =>
+    api(`/files/${fileId}`, { method: 'DELETE', token }),
+
+  downloadUrl: (fileId: number) => `${API_BASE}/files/${fileId}/download`,
+};
+
 // Two-Factor Authentication endpoints
 export const twoFactorApi = {
   setup: (token: string) =>
@@ -282,6 +371,9 @@ export interface Course {
   contentType?: string;
   thumbnailUrl?: string;
   isPublished?: boolean;
+  program?: string;
+  category?: string;
+  estimatedDurationMin?: number;
   createdAt: string;
 }
 
@@ -312,7 +404,59 @@ export interface Module {
   description: string;
   orderIndex: number;
   pdfUrl?: string;
+  contentUrl?: string;
+  contentType?: string;
+  durationMin?: number;
   progress?: number;
+  examId?: number;
+  fileCount?: number;
+  questionCount?: number;
+}
+
+export interface Exam {
+  id: number;
+  courseId: number;
+  moduleId?: number;
+  title: string;
+  description?: string;
+  subject?: string;
+  level?: string;
+  timeLimitMin: number;
+  passMark: number;
+  questionCount: number;
+  isRandomized: boolean;
+  isPublished: boolean;
+}
+
+export interface Question {
+  id: number;
+  examId: number;
+  text: string;
+  type: string;
+  options: QuestionOption[];
+  correctOptionId?: string;
+  explanation?: string;
+  imageUrl?: string;
+  orderIndex: number;
+}
+
+export interface QuestionOption {
+  id: number;
+  questionId: number;
+  text: string;
+  label: string;
+}
+
+export interface FileMetadata {
+  id: number;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedBy: string;
+  courseId?: string;
+  moduleId?: string;
+  createdAt: string;
 }
 
 export interface Organization {
