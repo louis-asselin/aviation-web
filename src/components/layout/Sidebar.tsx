@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PageId } from './DashboardLayout';
 import {
   LayoutDashboard, BookOpen, Users,
-  Building2, BarChart3, Settings, Plane, X, LogOut, ClipboardList, Shield
+  Building2, BarChart3, Settings, Plane, X, LogOut, ClipboardList, Shield, Bug
 } from 'lucide-react';
 import { getRoleLabel, getInitials } from '@/lib/utils';
 
@@ -31,6 +31,7 @@ const adminNavItems: NavItem[] = [
   { id: 'tracking', label: 'ATPL Tracking', icon: <ClipboardList className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, roles: ['admin', 'org_admin', 'instructor'] },
   { id: 'audit-logs', label: 'Audit Logs', icon: <Shield className="w-5 h-5" />, roles: ['admin'] },
+  { id: 'bug-reports', label: 'Bug Reports', icon: <Bug className="w-5 h-5" />, roles: ['admin'] },
   { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];
 

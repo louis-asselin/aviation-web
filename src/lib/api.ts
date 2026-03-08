@@ -320,6 +320,33 @@ export const auditLogsApi = {
     api<string[]>('/audit-logs/event-types', { token }),
 };
 
+// Bug Reports endpoints
+export const bugReportsApi = {
+  submit: (data: { title: string; description: string; category?: string; severity?: string; deviceInfo?: string }, token: string) =>
+    api<BugReport>('/bug-reports', { method: 'POST', body: data, token }),
+
+  list: (token: string, params?: { page?: number; limit?: number; status?: string; category?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.status) sp.set('status', params.status);
+    if (params?.category) sp.set('category', params.category);
+    const qs = sp.toString();
+    return api<{ reports: BugReport[]; total: number; page: number; limit: number }>(
+      `/bug-reports${qs ? `?${qs}` : ''}`, { token }
+    );
+  },
+
+  stats: (token: string) =>
+    api<{ open: number; inProgress: number; resolved: number; total: number }>('/bug-reports/stats', { token }),
+
+  update: (id: string, data: { status?: string; adminResponse?: string }, token: string) =>
+    api<BugReport>(`/bug-reports/${id}`, { method: 'PUT', body: data, token }),
+
+  delete: (id: string, token: string) =>
+    api(`/bug-reports/${id}`, { method: 'DELETE', token }),
+};
+
 // Student Tracking endpoints
 export const studentTrackingApi = {
   // Load students from org members, filtered client-side for students
@@ -523,6 +550,26 @@ export interface TrackingStudent {
   promotion?: string;
   assignedProgram?: string;
   gender?: string;
+}
+
+export interface BugReport {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  category: string;
+  severity: string;
+  status: string;
+  adminResponse: string | null;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  deviceInfo: string | null;
+  appVersion: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userName: string | null;
+  userEmail: string | null;
+  userRole: string | null;
 }
 
 export interface AuditLog {

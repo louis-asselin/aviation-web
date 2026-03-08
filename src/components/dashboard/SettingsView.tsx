@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { gdprApi, twoFactorApi } from '@/lib/api';
+import { gdprApi, twoFactorApi, bugReportsApi } from '@/lib/api';
 import {
   Shield, FileText, Download, Trash2, KeyRound,
-  AlertTriangle, CheckCircle2, Eye, EyeOff, Smartphone
+  AlertTriangle, CheckCircle2, Eye, EyeOff, Smartphone, Bug
 } from 'lucide-react';
 
 export default function SettingsView() {
@@ -30,6 +30,15 @@ export default function SettingsView() {
   const [is2FALoading, setIs2FALoading] = useState(false);
   const [showDisable2FA, setShowDisable2FA] = useState(false);
   const [disableCode, setDisableCode] = useState('');
+
+  // Bug report states
+  const [showBugForm, setShowBugForm] = useState(false);
+  const [bugTitle, setBugTitle] = useState('');
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugCategory, setBugCategory] = useState('general');
+  const [bugSeverity, setBugSeverity] = useState('medium');
+  const [isSubmittingBug, setIsSubmittingBug] = useState(false);
+  const [bugMessage, setBugMessage] = useState<{ type: string; text: string } | null>(null);
 
   // Load 2FA status
   useEffect(() => {
@@ -326,6 +335,112 @@ export default function SettingsView() {
           </div>
         )}
       </div>
+
+      {/* Bug Report (for non-admin users) */}
+      {user && user.role !== 'admin' && (
+        <div className="card">
+          <div className="flex items-center gap-2 mb-4">
+            <Bug className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Report a Bug</h2>
+          </div>
+
+          {bugMessage && (
+            <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
+              bugMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}>
+              {bugMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              {bugMessage.text}
+            </div>
+          )}
+
+          {showBugForm ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={bugTitle}
+                  onChange={e => setBugTitle(e.target.value)}
+                  className="input-field"
+                  placeholder="Brief description of the issue"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={bugDescription}
+                  onChange={e => setBugDescription(e.target.value)}
+                  className="input-field min-h-[100px]"
+                  placeholder="Describe the issue in detail..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select value={bugCategory} onChange={e => setBugCategory(e.target.value)} className="input-field">
+                    <option value="general">General</option>
+                    <option value="ui">User Interface</option>
+                    <option value="content">Content</option>
+                    <option value="performance">Performance</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                  <select value={bugSeverity} onChange={e => setBugSeverity(e.target.value)} className="input-field">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => { setShowBugForm(false); setBugTitle(''); setBugDescription(''); }} className="btn-secondary">Cancel</button>
+                <button
+                  onClick={async () => {
+                    if (!token || !bugTitle || !bugDescription) return;
+                    setIsSubmittingBug(true);
+                    setBugMessage(null);
+                    try {
+                      const deviceInfo = `${navigator.userAgent.includes('iPad') ? 'iPad' : 'Web'} - ${navigator.platform}`;
+                      await bugReportsApi.submit({
+                        title: bugTitle,
+                        description: bugDescription,
+                        category: bugCategory,
+                        severity: bugSeverity,
+                        deviceInfo,
+                      }, token);
+                      setBugMessage({ type: 'success', text: 'Bug report submitted. Thank you!' });
+                      setShowBugForm(false);
+                      setBugTitle('');
+                      setBugDescription('');
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : 'Failed to submit';
+                      setBugMessage({ type: 'error', text: msg });
+                    } finally {
+                      setIsSubmittingBug(false);
+                    }
+                  }}
+                  disabled={isSubmittingBug || !bugTitle || !bugDescription}
+                  className="btn-primary"
+                >
+                  {isSubmittingBug ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-500 mb-4">
+                Found a bug or issue? Let us know and our team will look into it.
+              </p>
+              <button onClick={() => setShowBugForm(true)} className="btn-secondary">
+                Report a Bug
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Legal */}
       <div className="card">

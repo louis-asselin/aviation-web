@@ -15,7 +15,7 @@ export default function CoursesView() {
   const [isLoadingModules, setIsLoadingModules] = useState(false);
   const [suspendedOrgs, setSuspendedOrgs] = useState<Organization[]>([]);
 
-  useEffect(() => {
+  const loadData = () => {
     if (!token) return;
     coursesApi.list(token)
       .then(data => setCourses(Array.isArray(data) ? data : []))
@@ -29,6 +29,14 @@ export default function CoursesView() {
         setSuspendedOrgs(orgs.filter(o => o.isActive === false));
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Poll every 60s to detect org deactivation in real time
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
   }, [token]);
 
   const openCourse = async (course: Course) => {
@@ -153,8 +161,8 @@ export default function CoursesView() {
         <div key={org.id} className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
           <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-orange-700">Accès suspendu</p>
-            <p className="text-sm text-orange-600">Votre accès à {org.name} a été suspendu. Contactez votre administrateur.</p>
+            <p className="text-sm font-semibold text-orange-700">Access Suspended</p>
+            <p className="text-sm text-orange-600">Your access to {org.name} has been suspended. Please contact your administrator.</p>
           </div>
         </div>
       ))}
