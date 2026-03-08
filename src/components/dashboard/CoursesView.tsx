@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { coursesApi, Course, Module } from '@/lib/api';
-import { BookOpen, ChevronRight, FileText, ArrowLeft, Clock, Users } from 'lucide-react';
+import { coursesApi, orgsApi, Course, Module, Organization } from '@/lib/api';
+import { BookOpen, ChevronRight, FileText, ArrowLeft, Clock, Users, AlertTriangle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default function CoursesView() {
@@ -13,6 +13,7 @@ export default function CoursesView() {
   const [modules, setModules] = useState<Module[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
+  const [suspendedOrgs, setSuspendedOrgs] = useState<Organization[]>([]);
 
   useEffect(() => {
     if (!token) return;
@@ -20,6 +21,14 @@ export default function CoursesView() {
       .then(data => setCourses(Array.isArray(data) ? data : []))
       .catch(err => console.error('Failed to load courses:', err))
       .finally(() => setIsLoading(false));
+
+    // Load user orgs to detect suspended ones
+    orgsApi.list(token, false)
+      .then(data => {
+        const orgs = Array.isArray(data) ? data : [];
+        setSuspendedOrgs(orgs.filter(o => o.isActive === false));
+      })
+      .catch(() => {});
   }, [token]);
 
   const openCourse = async (course: Course) => {
@@ -139,6 +148,17 @@ export default function CoursesView() {
   // Courses list view
   return (
     <div className="space-y-6">
+      {/* Suspended org banners */}
+      {suspendedOrgs.map(org => (
+        <div key={org.id} className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+          <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-orange-700">Accès suspendu</p>
+            <p className="text-sm text-orange-600">Votre accès à {org.name} a été suspendu. Contactez votre administrateur.</p>
+          </div>
+        </div>
+      ))}
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">My Courses</h1>
         <span className="text-sm text-gray-500">{courses.length} course{courses.length !== 1 ? 's' : ''}</span>
