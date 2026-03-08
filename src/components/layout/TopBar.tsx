@@ -15,7 +15,7 @@ export default function TopBar({ onMenuToggle, onNavigate }: TopBarProps) {
   const { user } = useAuth();
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30">
+    <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-30 overflow-visible">
       <div className="flex items-center gap-4">
         <button
           onClick={onMenuToggle}
