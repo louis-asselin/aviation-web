@@ -6,7 +6,7 @@ import {
   LayoutDashboard, BookOpen, Users,
   Building2, BarChart3, Settings, Plane, X, LogOut, ClipboardList
 } from 'lucide-react';
-import { getRoleLabel, getRoleColor, getInitials } from '@/lib/utils';
+import { getRoleLabel, getInitials } from '@/lib/utils';
 
 interface SidebarProps {
   currentPage: PageId;

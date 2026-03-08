@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { orgsApi, studentTrackingApi, Organization, TrackingStudent } from '@/lib/api';
-import { Search, Users, GraduationCap, Filter } from 'lucide-react';
+import { Search, Users, GraduationCap } from 'lucide-react';
 
 const ATPL_SUBJECTS = ['010','021','022','031','032','033','040','050','061','062','070','081','090','100'];
 const SUBJECT_NAMES: Record<string, string> = {
@@ -15,7 +15,7 @@ const SUBJECT_NAMES: Record<string, string> = {
 };
 
 export default function StudentTrackingView() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [students, setStudents] = useState<TrackingStudent[]>([]);

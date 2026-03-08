@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { analyticsApi, AdminAnalytics } from '@/lib/api';
 import {
-  Users, Clock, Activity, Wifi, Download, BarChart3,
-  TrendingUp, UserCheck, Monitor
+  Users, Clock, Activity, Download, UserCheck, Monitor
 } from 'lucide-react';
 
 export default function AdminAnalyticsView() {
@@ -85,7 +84,7 @@ export default function AdminAnalyticsView() {
         <KPICard icon={<Clock className="w-5 h-5" />} label="Study Hours (week)" value={`${Math.round(analytics.totalStudyHoursThisWeek)}h`} color="orange" />
         <KPICard icon={<Activity className="w-5 h-5" />} label="Total App Time" value={`${Math.round(analytics.totalAppTimeHours)}h`} color="cyan" />
         <KPICard icon={<Download className="w-5 h-5" />} label="Offline Downloads" value={analytics.offlineDownloadsCount} color="gray" />
-        <KPICard icon={<Wifi className="w-5 h-5" />} label="Concurrent" value={analytics.concurrentUsers} color="green" />
+        <KPICard icon={<Users className="w-5 h-5" />} label="Total Students" value={analytics.totalActiveStudents} color="blue" />
       </div>
 
       {/* Demographics */}
