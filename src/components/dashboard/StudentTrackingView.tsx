@@ -54,7 +54,7 @@ export default function StudentTrackingView() {
     try {
       const detail = await studentTrackingApi.studentDetail(selectedOrgId, studentId, token) as Record<string, unknown>;
       setStudentDetail(detail);
-    } catch {
+    } catch (_err) {
       setStudentDetail(null);
     } finally {
       setDetailLoading(false);
@@ -67,7 +67,7 @@ export default function StudentTrackingView() {
     return matchesSearch && matchesProgram;
   });
 
-  const programs = [...new Set(students.map(s => s.assignedProgram).filter(Boolean))];
+  const programs: string[] = students.map(s => s.assignedProgram).filter((p): p is string => !!p);
 
   return (
     <div className="space-y-6">
