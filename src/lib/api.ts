@@ -132,8 +132,8 @@ export const coursesApi = {
 
 // Organizations endpoints — backend returns direct arrays
 export const orgsApi = {
-  list: (token: string) =>
-    api<Organization[]>('/organizations', { token }),
+  list: (token: string, includeInactive = true) =>
+    api<Organization[]>(`/organizations${includeInactive ? '?includeInactive=true' : ''}`, { token }),
 
   get: (id: number, token: string) =>
     api<Organization>(`/organizations/${id}`, { token }),
