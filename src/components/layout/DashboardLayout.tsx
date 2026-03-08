@@ -10,8 +10,10 @@ import AdminUsersView from '@/components/dashboard/AdminUsersView';
 import AdminOrgsView from '@/components/dashboard/AdminOrgsView';
 import SettingsView from '@/components/dashboard/SettingsView';
 import ProfileView from '@/components/dashboard/ProfileView';
+import AdminAnalyticsView from '@/components/dashboard/AdminAnalyticsView';
+import StudentTrackingView from '@/components/dashboard/StudentTrackingView';
 
-export type PageId = 'dashboard' | 'courses' | 'users' | 'organizations' | 'analytics' | 'settings' | 'profile';
+export type PageId = 'dashboard' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'settings' | 'profile';
 
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
@@ -28,6 +30,10 @@ export default function DashboardLayout() {
         return <AdminUsersView />;
       case 'organizations':
         return <AdminOrgsView />;
+      case 'analytics':
+        return <AdminAnalyticsView />;
+      case 'tracking':
+        return <StudentTrackingView />;
       case 'settings':
         return <SettingsView />;
       case 'profile':

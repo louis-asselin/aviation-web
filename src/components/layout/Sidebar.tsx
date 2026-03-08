@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PageId } from './DashboardLayout';
 import {
   LayoutDashboard, BookOpen, Users,
-  Building2, BarChart3, Settings, Plane, X, LogOut
+  Building2, BarChart3, Settings, Plane, X, LogOut, ClipboardList
 } from 'lucide-react';
 import { getRoleLabel, getRoleColor, getInitials } from '@/lib/utils';
 
@@ -27,6 +27,7 @@ const navItems: NavItem[] = [
   { id: 'courses', label: 'Courses', icon: <BookOpen className="w-5 h-5" /> },
   { id: 'users', label: 'User Management', icon: <Users className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
   { id: 'organizations', label: 'Organizations', icon: <Building2 className="w-5 h-5" />, roles: ['admin'] },
+  { id: 'tracking', label: 'ATPL Tracking', icon: <ClipboardList className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, roles: ['admin', 'org_admin', 'instructor'] },
   { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];

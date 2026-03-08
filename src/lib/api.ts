@@ -154,6 +154,24 @@ export const announcementsApi = {
     api<Announcement[]>(`/organizations/${orgId}/announcements`, { token }),
 };
 
+// Analytics endpoints
+export const analyticsApi = {
+  adminOverview: (token: string, period: string = '7d') =>
+    api<AdminAnalytics>(`/analytics/admin/overview?period=${period}`, { token }),
+
+  orgOverview: (orgId: string, token: string) =>
+    api<OrgAnalytics>(`/analytics/org/${orgId}/overview`, { token }),
+};
+
+// Student Tracking endpoints
+export const studentTrackingApi = {
+  students: (orgId: string, token: string) =>
+    api<TrackingStudent[]>(`/student-tracking/organizations/${orgId}/students`, { token }),
+
+  studentDetail: (orgId: string, userId: string, token: string) =>
+    api(`/student-tracking/organizations/${orgId}/students/${userId}`, { token }),
+};
+
 // Types
 export interface User {
   id: number;
@@ -245,4 +263,45 @@ export interface Announcement {
   organizationId: number;
   authorName: string;
   createdAt: string;
+}
+
+export interface AdminAnalytics {
+  totalActiveStudents: number;
+  totalStudyHoursThisWeek: number;
+  activeStudentsLast7Days: number;
+  activeStudentsLast30Days: number;
+  topCoursesByTime: { courseId: string; courseTitle: string; totalTime: number }[];
+  concurrentUsers: number;
+  offlineDownloadsCount: number;
+  totalAppTimeHours: number;
+  courseTimeByOrg: { orgId: string; orgName: string; orgType: string; courseId: string; courseTitle: string; totalSeconds: number }[];
+  genderDistribution: Record<string, number>;
+  roleDistribution: Record<string, number>;
+  passRateByPromotion: { promotion: string; avgScore: number; attemptCount: number; passedCount: number; passRate: number }[];
+  passRateByGender: { gender: string; avgScore: number; attemptCount: number; passedCount: number; passRate: number }[];
+}
+
+export interface OrgAnalytics {
+  orgName: string;
+  orgType: string;
+  totalUsers: number;
+  activeUsers: number;
+  concurrentUsers: number;
+  offlineDownloadsCount: number;
+  totalAppTimeHours: number;
+  genderDistribution: Record<string, number>;
+  roleDistribution: Record<string, number>;
+  courseTimeByOrg: { courseId: string; courseTitle: string; totalSeconds: number }[];
+  passRateByPromotion?: { promotion: string; avgScore: number; attemptCount: number; passedCount: number; passRate: number }[];
+  passRateByGender?: { gender: string; avgScore: number; attemptCount: number; passedCount: number; passRate: number }[];
+}
+
+export interface TrackingStudent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  promotion?: string;
+  assignedProgram?: string;
+  gender?: string;
 }
