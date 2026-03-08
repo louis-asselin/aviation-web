@@ -15,7 +15,7 @@ import AdminAnalyticsView from '@/components/dashboard/AdminAnalyticsView';
 import StudentTrackingView from '@/components/dashboard/StudentTrackingView';
 import AuditLogsView from '@/components/dashboard/AuditLogsView';
 
-export type PageId = 'dashboard' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'settings' | 'profile';
+export type PageId = 'dashboard' | 'content' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'settings' | 'profile';
 
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
@@ -26,10 +26,10 @@ export default function DashboardLayout() {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardHome />;
+      case 'content':
+        return <AdminCoursesView />;
       case 'courses':
-        return (user?.role === 'admin' || user?.role === 'org_admin' || user?.role === 'instructor')
-          ? <AdminCoursesView />
-          : <CoursesView />;
+        return <CoursesView />;
       case 'users':
         return <AdminUsersView />;
       case 'organizations':

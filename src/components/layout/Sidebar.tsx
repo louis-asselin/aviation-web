@@ -22,9 +22,10 @@ interface NavItem {
   roles?: string[];
 }
 
-const navItems: NavItem[] = [
+const adminNavItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'courses', label: 'Courses', icon: <BookOpen className="w-5 h-5" /> },
+  { id: 'content', label: 'Content', icon: <BookOpen className="w-5 h-5" />, roles: ['admin', 'org_admin', 'instructor'] },
+  { id: 'courses', label: 'My Courses', icon: <BookOpen className="w-5 h-5" />, roles: ['student', 'pilot'] },
   { id: 'users', label: 'User Management', icon: <Users className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
   { id: 'organizations', label: 'Organizations', icon: <Building2 className="w-5 h-5" />, roles: ['admin'] },
   { id: 'tracking', label: 'ATPL Tracking', icon: <ClipboardList className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
@@ -36,7 +37,7 @@ const navItems: NavItem[] = [
 export default function Sidebar({ currentPage, onNavigate, isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
 
-  const filteredItems = navItems.filter(item => {
+  const filteredItems = adminNavItems.filter(item => {
     if (!item.roles) return true;
     return user && item.roles.includes(user.role);
   });

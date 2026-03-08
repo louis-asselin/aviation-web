@@ -4,12 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   coursesApi, orgsApi, examsApi, filesApi,
-  Course, Module, Organization, Question, FileMetadata
+  Course, Module, Organization, Question, FileMetadata, Exam
 } from '@/lib/api';
 import {
   BookOpen, Plus, Pencil, Trash2, Search, ArrowLeft, X, FileText,
   ChevronRight, Upload, Download, HelpCircle, CheckCircle, XCircle,
-  ChevronDown, ChevronUp, RotateCw
+  ChevronDown, ChevronUp, RotateCw, Settings2, Clock, Target, Shuffle
 } from 'lucide-react';
 
 // ============================================================
@@ -418,6 +418,38 @@ function ModuleDetailView({ token, course, module: mod, files, questions, loadin
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [error, setError] = useState('');
 
+  // Exam settings
+  const [exam, setExam] = useState<Exam | null>(null);
+  const [examForm, setExamForm] = useState({ timeLimitMin: 60, passMark: 75, isRandomized: true, isPublished: false });
+  const [savingExam, setSavingExam] = useState(false);
+  const [showExamSettings, setShowExamSettings] = useState(false);
+
+  // Load exam info
+  useEffect(() => {
+    if (!mod.examId || !token) return;
+    examsApi.get(mod.examId, token).then(e => {
+      setExam(e);
+      setExamForm({
+        timeLimitMin: e.timeLimitMin ?? 60,
+        passMark: e.passMark ?? 75,
+        isRandomized: e.isRandomized ?? true,
+        isPublished: e.isPublished ?? false,
+      });
+    }).catch(() => {});
+  }, [mod.examId, token]);
+
+  const saveExamSettings = async () => {
+    if (!exam || !token) return;
+    setSavingExam(true);
+    try {
+      const updated = await examsApi.update(exam.id, examForm, token);
+      setExam(updated);
+      setShowExamSettings(false);
+    } catch (err) {
+      console.error('Failed to update exam:', err);
+    } finally { setSavingExam(false); }
+  };
+
   // File upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -470,6 +502,72 @@ function ModuleDetailView({ token, course, module: mod, files, questions, loadin
       {mod.description && <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-4">{mod.description}</p>}
 
       {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
+
+      {/* EXAM SETTINGS SECTION */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-purple-500" /> Exam Settings
+          </h2>
+          {exam && !showExamSettings && (
+            <button onClick={() => setShowExamSettings(true)} className="text-sm text-primary-600 hover:text-primary-700 font-medium">Modifier</button>
+          )}
+        </div>
+
+        {!exam ? (
+          <p className="text-sm text-gray-400">Les paramètres d&apos;examen apparaîtront après l&apos;ajout d&apos;une question.</p>
+        ) : showExamSettings ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Durée (min)</label>
+                <input type="number" value={examForm.timeLimitMin} min={1} max={300} onChange={e => setExamForm({...examForm, timeLimitMin: Number(e.target.value)})} className="input-field" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"><Target className="w-3.5 h-3.5" /> Note de passage (%)</label>
+                <input type="number" value={examForm.passMark} min={0} max={100} onChange={e => setExamForm({...examForm, passMark: Number(e.target.value)})} className="input-field" />
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={examForm.isRandomized} onChange={e => setExamForm({...examForm, isRandomized: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
+                <Shuffle className="w-3.5 h-3.5" /> Questions aléatoires
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={examForm.isPublished} onChange={e => setExamForm({...examForm, isPublished: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-primary-600" />
+                Examen publié
+              </label>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowExamSettings(false)} className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Annuler</button>
+              <button onClick={saveExamSettings} disabled={savingExam} className="btn-primary text-sm">{savingExam ? 'Enregistrement...' : 'Enregistrer'}</button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <Clock className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-gray-900">{exam.timeLimitMin} min</p>
+              <p className="text-xs text-gray-500">Durée</p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <Target className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-gray-900">{exam.passMark}%</p>
+              <p className="text-xs text-gray-500">Note de passage</p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <Shuffle className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+              <p className="text-lg font-bold text-gray-900">{exam.isRandomized ? 'Oui' : 'Non'}</p>
+              <p className="text-xs text-gray-500">Aléatoire</p>
+            </div>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className={`w-4 h-4 rounded-full mx-auto mb-1 ${exam.isPublished ? 'bg-green-500' : 'bg-yellow-500'}`} />
+              <p className="text-lg font-bold text-gray-900">{exam.isPublished ? 'Publié' : 'Brouillon'}</p>
+              <p className="text-xs text-gray-500">Statut</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* FILES SECTION */}
       <div className="card">
