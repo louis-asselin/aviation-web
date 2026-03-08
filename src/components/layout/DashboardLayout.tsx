@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import DashboardHome from '@/components/dashboard/DashboardHome';
 import CoursesView from '@/components/dashboard/CoursesView';
+import AdminCoursesView from '@/components/dashboard/AdminCoursesView';
 import AdminUsersView from '@/components/dashboard/AdminUsersView';
 import AdminOrgsView from '@/components/dashboard/AdminOrgsView';
 import SettingsView from '@/components/dashboard/SettingsView';
@@ -26,7 +27,9 @@ export default function DashboardLayout() {
       case 'dashboard':
         return <DashboardHome />;
       case 'courses':
-        return <CoursesView />;
+        return (user?.role === 'admin' || user?.role === 'org_admin' || user?.role === 'instructor')
+          ? <AdminCoursesView />
+          : <CoursesView />;
       case 'users':
         return <AdminUsersView />;
       case 'organizations':

@@ -107,6 +107,27 @@ export const coursesApi = {
 
   progress: (courseId: number, token: string) =>
     api(`/courses/${courseId}/progress`, { token }),
+
+  create: (data: { title: string; description: string; organizationId: number; subject?: string; level?: string; contentType?: string }, token: string) =>
+    api<Course>('/courses', { method: 'POST', body: data, token }),
+
+  update: (id: number, data: Partial<Course>, token: string) =>
+    api<Course>(`/courses/${id}`, { method: 'PUT', body: data, token }),
+
+  delete: (id: number, token: string) =>
+    api(`/courses/${id}`, { method: 'DELETE', token }),
+
+  createModule: (courseId: number, data: { title: string; description?: string; orderIndex?: number }, token: string) =>
+    api<Module>(`/courses/${courseId}/modules`, { method: 'POST', body: data, token }),
+
+  updateModule: (courseId: number, moduleId: number, data: Partial<Module>, token: string) =>
+    api<Module>(`/courses/${courseId}/modules/${moduleId}`, { method: 'PUT', body: data, token }),
+
+  deleteModule: (courseId: number, moduleId: number, token: string) =>
+    api(`/courses/${courseId}/modules/${moduleId}`, { method: 'DELETE', token }),
+
+  reorderModules: (courseId: number, moduleIds: number[], token: string) =>
+    api(`/courses/${courseId}/modules/reorder`, { method: 'PUT', body: { moduleIds }, token }),
 };
 
 // Organizations endpoints — backend returns direct arrays
@@ -119,6 +140,12 @@ export const orgsApi = {
 
   members: (id: number, token: string) =>
     api<User[]>(`/organizations/${id}/members`, { token }),
+
+  create: (data: { name: string; type: string; code: string; description?: string }, token: string) =>
+    api<Organization>('/organizations', { method: 'POST', body: data, token }),
+
+  update: (id: number, data: Partial<Organization & { isActive?: boolean; description?: string }>, token: string) =>
+    api<Organization>(`/organizations/${id}`, { method: 'PUT', body: data, token }),
 };
 
 // Users endpoints (admin) — backend returns direct arrays
@@ -293,8 +320,12 @@ export interface Organization {
   name: string;
   type: string;
   code: string;
+  description?: string;
   logoUrl?: string;
+  isActive?: boolean;
   memberCount?: number;
+  courseCount?: number;
+  userCount?: number;
 }
 
 export interface Announcement {
