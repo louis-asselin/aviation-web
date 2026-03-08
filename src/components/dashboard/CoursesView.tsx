@@ -36,7 +36,7 @@ export default function CoursesView() {
   const [suspendedOrgs, setSuspendedOrgs] = useState<Organization[]>([]);
   const [viewingFile, setViewingFile] = useState<FileMetadata | null>(null);
   const [viewingExam, setViewingExam] = useState<string | number | null>(null);
-  const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
+  const [fileBlobUrl, setFileBlobUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
   const loadData = () => {
@@ -60,30 +60,38 @@ export default function CoursesView() {
     return () => clearInterval(interval);
   }, [token]);
 
-  // Load image as blob when viewingFile changes (avoids CORS/token issues with <img src>)
+  // Load file as blob when viewingFile changes (avoids CORS/token issues)
   useEffect(() => {
-    if (!viewingFile || !viewingFile.mimeType?.includes('image') || !token) {
-      setImageBlobUrl(null);
+    if (!viewingFile || !token) {
+      setFileBlobUrl(null);
       return;
     }
-    let revoked = false;
+    const isPdf = viewingFile.mimeType?.includes('pdf');
+    const isImage = viewingFile.mimeType?.includes('image');
+    if (!isPdf && !isImage) {
+      setFileBlobUrl(null);
+      return;
+    }
+    let cancelled = false;
+    setFileBlobUrl(null);
     const url = `${API_BASE}/files/${viewingFile.id}/download?token=${token}`;
     fetch(url)
       .then(res => {
-        if (!res.ok) throw new Error('Failed to load image');
+        if (!res.ok) throw new Error('Failed to load file');
         return res.blob();
       })
       .then(blob => {
-        if (!revoked) {
-          setImageBlobUrl(URL.createObjectURL(blob));
+        if (!cancelled) {
+          const blobUrl = URL.createObjectURL(blob);
+          setFileBlobUrl(blobUrl);
         }
       })
       .catch(err => {
-        console.error('Image load error:', err);
-        if (!revoked) setImageBlobUrl(null);
+        console.error('File load error:', err);
+        if (!cancelled) setFileBlobUrl(null);
       });
     return () => {
-      revoked = true;
+      cancelled = true;
     };
   }, [viewingFile, token]);
 
@@ -186,23 +194,23 @@ export default function CoursesView() {
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }}>
-          {isPdf ? (
+          {!fileBlobUrl ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+            </div>
+          ) : isPdf ? (
             <iframe
-              src={url}
+              src={fileBlobUrl}
               className="w-full h-full"
               title={viewingFile.originalName}
             />
           ) : isImage ? (
             <div className="w-full h-full flex items-center justify-center bg-gray-50 p-4">
-              {imageBlobUrl ? (
-                <img
-                  src={imageBlobUrl}
-                  alt={viewingFile.originalName}
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                />
-              ) : (
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-              )}
+              <img
+                src={fileBlobUrl}
+                alt={viewingFile.originalName}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
