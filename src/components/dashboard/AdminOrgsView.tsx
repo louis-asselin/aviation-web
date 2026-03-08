@@ -13,15 +13,24 @@ const PROGRAMS_BY_TYPE: Record<string, string[]> = {
   ato: ['ATPL_THEORIQUE', 'ATPI', 'MODULAIRE', 'PPL'],
   airline: ['AIRLINE_OPS', 'SECURITE', 'MANUELS', 'CRM', 'DGR', 'SOP'],
   common: ['COMMON', 'SECURITE', 'DGR'],
+  private: ['ATPL_THEORIQUE', 'ATPI', 'MODULAIRE', 'PPL', 'COMMON'],
+  premium: ['ATPL_THEORIQUE', 'ATPI', 'MODULAIRE', 'PPL', 'AIRLINE_OPS', 'CRM', 'COMMON'],
 };
 
 const ORG_TYPES = [
   { value: 'ato', label: 'ATO', color: 'blue' },
   { value: 'airline', label: 'Compagnie', color: 'orange' },
   { value: 'common', label: 'Commun', color: 'green' },
+  { value: 'private', label: 'Privé', color: 'purple' },
+  { value: 'premium', label: 'Premium', color: 'yellow' },
 ];
 
 const CONTENT_TYPES = ['pdf', 'video', 'interactive', 'mixed', 'quiz'];
+
+const orgTypeColor = (type: string) => {
+  const map: Record<string, string> = { ato: 'blue', airline: 'orange', common: 'green', private: 'purple', premium: 'yellow' };
+  return map[type] || 'gray';
+};
 
 interface OrgFormData {
   name: string;
@@ -124,7 +133,7 @@ export default function AdminOrgsView() {
     try {
       if (editingOrg) {
         await orgsApi.update(editingOrg.id, {
-          name: orgForm.name, type: orgForm.type, description: orgForm.description,
+          name: orgForm.name, type: orgForm.type, code: orgForm.code, description: orgForm.description,
         }, token);
       } else {
         await orgsApi.create({
@@ -255,7 +264,7 @@ export default function AdminOrgsView() {
       coursesByProgram[prog].push(c);
     });
 
-    const typeColor = selectedOrg.type === 'ato' ? 'blue' : selectedOrg.type === 'airline' ? 'orange' : 'green';
+    const typeColor = orgTypeColor(selectedOrg.type);
 
     return (
       <div className="space-y-6">
@@ -430,7 +439,7 @@ export default function AdminOrgsView() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredOrgs.map((org) => {
-            const tc = org.type === 'ato' ? 'blue' : org.type === 'airline' ? 'orange' : 'green';
+            const tc = orgTypeColor(org.type);
             return (
               <div key={org.id} className="card hover:shadow-md transition-all cursor-pointer group" onClick={() => openOrgDetail(org)}>
                 <div className="flex items-start justify-between">
@@ -505,8 +514,7 @@ function OrgModal({ form, setForm, editing, saving, error, onSave, onClose }: {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Code *</label>
-          <input type="text" value={form.code} onChange={(e) => setForm({...form, code: e.target.value.toUpperCase()})} className="input-field" placeholder="Ex: ATO-001" disabled={editing} />
-          {editing && <p className="text-xs text-gray-400 mt-1">Le code ne peut pas être modifié</p>}
+          <input type="text" value={form.code} onChange={(e) => setForm({...form, code: e.target.value.toUpperCase()})} className="input-field" placeholder="Ex: CANNES_ATO" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
