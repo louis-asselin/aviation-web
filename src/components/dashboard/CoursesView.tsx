@@ -59,6 +59,33 @@ export default function CoursesView() {
     return () => clearInterval(interval);
   }, [token]);
 
+  // Load image as blob when viewingFile changes (avoids CORS/token issues with <img src>)
+  useEffect(() => {
+    if (!viewingFile || !viewingFile.mimeType?.includes('image') || !token) {
+      setImageBlobUrl(null);
+      return;
+    }
+    let revoked = false;
+    const url = `${API_BASE}/files/${viewingFile.id}/download?token=${token}`;
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load image');
+        return res.blob();
+      })
+      .then(blob => {
+        if (!revoked) {
+          setImageBlobUrl(URL.createObjectURL(blob));
+        }
+      })
+      .catch(err => {
+        console.error('Image load error:', err);
+        if (!revoked) setImageBlobUrl(null);
+      });
+    return () => {
+      revoked = true;
+    };
+  }, [viewingFile, token]);
+
   const openCourse = async (course: Course) => {
     if (!token) return;
     setSelectedCourse(course);
@@ -131,34 +158,6 @@ export default function CoursesView() {
   // ==========================================
   // VIEW: Inline file viewer (PDF / Image)
   // ==========================================
-  // Load image as blob when viewingFile changes (avoids CORS/token issues with <img src>)
-  useEffect(() => {
-    if (!viewingFile || !viewingFile.mimeType?.includes('image') || !token) {
-      setImageBlobUrl(null);
-      return;
-    }
-    let revoked = false;
-    const url = getFileUrl(viewingFile);
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load image');
-        return res.blob();
-      })
-      .then(blob => {
-        if (!revoked) {
-          setImageBlobUrl(URL.createObjectURL(blob));
-        }
-      })
-      .catch(err => {
-        console.error('Image load error:', err);
-        if (!revoked) setImageBlobUrl(null);
-      });
-    return () => {
-      revoked = true;
-      setImageBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
-    };
-  }, [viewingFile, token]);
-
   if (viewingFile) {
     const url = getFileUrl(viewingFile);
     const isPdf = viewingFile.mimeType?.includes('pdf');
