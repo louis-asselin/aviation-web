@@ -165,11 +165,13 @@ export const analyticsApi = {
 
 // Student Tracking endpoints
 export const studentTrackingApi = {
-  students: (orgId: string, token: string) =>
-    api<TrackingStudent[]>(`/student-tracking/organizations/${orgId}/students`, { token }),
+  // Load students from org members, filtered client-side for students
+  orgMembers: (orgId: string, token: string) =>
+    api<User[]>(`/organizations/${orgId}/members`, { token }),
 
-  studentDetail: (orgId: string, userId: string, token: string) =>
-    api(`/student-tracking/organizations/${orgId}/students/${userId}`, { token }),
+  // Get full ATPL tracking summary for a student
+  summary: (studentId: string, orgId: string, token: string) =>
+    api(`/student-tracking/summary/${studentId}/${orgId}`, { token }),
 };
 
 // Types
