@@ -56,8 +56,8 @@ export default function AdminLogbookView() {
     setSelectedUser(u);
     setEntriesLoading(true);
     try {
-      const data = await logbooksApi.adminUserEntries(u.id, token);
-      setEntries(data);
+      const res = await logbooksApi.adminUserEntries(u.id, token);
+      setEntries(res.data);
     } catch (err) {
       console.error('Failed to load entries:', err);
     }
