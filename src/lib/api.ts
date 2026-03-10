@@ -380,6 +380,71 @@ export const notificationsApi = {
     api('/notifications', { method: 'DELETE', token }),
 };
 
+// Logbook endpoints
+export const logbooksApi = {
+  list: (token: string, params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.startDate) q.set('startDate', params.startDate);
+    if (params?.endDate) q.set('endDate', params.endDate);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return api<{ data: LogbookEntry[]; total: number; page: number; limit: number }>(`/logbooks/entries${qs}`, { token });
+  },
+  get: (id: string, token: string) =>
+    api<LogbookEntry>(`/logbooks/entries/${id}`, { token }),
+  create: (entry: Partial<LogbookEntry>, token: string) =>
+    api<LogbookEntry>('/logbooks/entries', { method: 'POST', body: entry, token }),
+  update: (id: string, entry: Partial<LogbookEntry>, token: string) =>
+    api<LogbookEntry>(`/logbooks/entries/${id}`, { method: 'PUT', body: entry, token }),
+  delete: (id: string, token: string) =>
+    api(`/logbooks/entries/${id}`, { method: 'DELETE', token }),
+
+  // Aircraft memory
+  listAircraft: (token: string) =>
+    api<UserAircraft[]>('/logbooks/aircraft', { token }),
+  saveAircraft: (aircraftId: string, aircraftType: string, token: string) =>
+    api<UserAircraft>('/logbooks/aircraft', { method: 'POST', body: { aircraftId, aircraftType }, token }),
+
+  // Stats
+  stats: (token: string, startDate?: string, endDate?: string, userId?: string) => {
+    const q = new URLSearchParams();
+    if (startDate) q.set('startDate', startDate);
+    if (endDate) q.set('endDate', endDate);
+    if (userId) q.set('userId', userId);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return api<LogbookStats>(`/logbooks/stats${qs}`, { token });
+  },
+  statsRoutes: (token: string, startDate?: string, endDate?: string, userId?: string) => {
+    const q = new URLSearchParams();
+    if (startDate) q.set('startDate', startDate);
+    if (endDate) q.set('endDate', endDate);
+    if (userId) q.set('userId', userId);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return api<LogbookRoute[]>(`/logbooks/stats/routes${qs}`, { token });
+  },
+
+  // Admin
+  adminUsers: (token: string) =>
+    api<LogbookUser[]>('/logbooks/admin/users', { token }),
+  adminUserEntries: (userId: string, token: string, params?: { page?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return api<{ data: LogbookEntry[]; total: number; page: number; limit: number; user: { id: string; firstName: string; lastName: string; email: string; role: string } }>(`/logbooks/admin/user/${userId}/entries${qs}`, { token });
+  },
+
+  // Export
+  exportPdf: (token: string) => {
+    // Returns HTML — fetch as blob
+    return fetch(`${API_BASE}/logbooks/export-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    }).then(r => r.blob());
+  },
+};
+
 // Student Tracking endpoints
 export const studentTrackingApi = {
   // Load students from org members, filtered client-side for students
@@ -655,4 +720,89 @@ export interface AuditLog {
   userId: string | null;
   userName: string | null;
   userEmail: string | null;
+}
+
+// ─── Logbook Types ─────────────────────────────────────────
+
+export interface LogbookEntry {
+  id: string;
+  userId: string;
+  date: string;
+  callsign: string;
+  aircraftId: string;
+  aircraftType: string;
+  departure: string;
+  destination: string;
+  scheduledOut: string | null;
+  scheduledIn: string | null;
+  blockOff: string;
+  takeOffTime: string;
+  landingTime: string;
+  blockIn: string;
+  picName: string;
+  picLicenceNumber: string | null;
+  sicName: string;
+  sicLicenceNumber: string | null;
+  ifrTime: number;
+  nightTime: number;
+  picTime: number;
+  sicTime: number;
+  reliefTime: number;
+  xcTime: number;
+  multiPilotTime: number;
+  dualReceived: number;
+  dualGiven: number;
+  simulatorTime: number;
+  takeoffDay: number;
+  takeoffNight: number;
+  landingDay: number;
+  landingNight: number;
+  autoland: number;
+  holdCount: number | null;
+  approachCount: number | null;
+  goAroundCount: number | null;
+  remarks: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserAircraft {
+  id: string;
+  aircraftId: string;
+  aircraftType: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LogbookStats {
+  totalFlights: number;
+  totalBlockMinutes: number;
+  totalFlightMinutes: number;
+  ifrMinutes: number;
+  nightMinutes: number;
+  picMinutes: number;
+  sicMinutes: number;
+  dualReceivedMinutes: number;
+  dualGivenMinutes: number;
+  xcMinutes: number;
+  multiPilotMinutes: number;
+  simulatorMinutes: number;
+  airports: { icao: string; count: number }[];
+  routes: { dep: string; dest: string; count: number }[];
+}
+
+export interface LogbookRoute {
+  dep: string;
+  dest: string;
+  count: number;
+  dates: string[];
+}
+
+export interface LogbookUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  entryCount: number;
 }

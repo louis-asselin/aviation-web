@@ -15,8 +15,10 @@ import AdminAnalyticsView from '@/components/dashboard/AdminAnalyticsView';
 import StudentTrackingView from '@/components/dashboard/StudentTrackingView';
 import AuditLogsView from '@/components/dashboard/AuditLogsView';
 import BugReportsView from '@/components/dashboard/BugReportsView';
+import LogbookPageWrapper from '@/components/dashboard/LogbookPageWrapper';
+import AdminLogbookView from '@/components/dashboard/AdminLogbookView';
 
-export type PageId = 'dashboard' | 'content' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'bug-reports' | 'settings' | 'profile';
+export type PageId = 'dashboard' | 'content' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'bug-reports' | 'logbook' | 'admin-logbooks' | 'settings' | 'profile';
 
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
@@ -43,6 +45,10 @@ export default function DashboardLayout() {
         return <AuditLogsView />;
       case 'bug-reports':
         return <BugReportsView />;
+      case 'logbook':
+        return <LogbookPageWrapper />;
+      case 'admin-logbooks':
+        return <AdminLogbookView />;
       case 'settings':
         return <SettingsView />;
       case 'profile':
