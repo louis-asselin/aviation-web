@@ -804,5 +804,6 @@ export interface LogbookUser {
   lastName: string;
   email: string;
   role: string;
+  organizationName?: string;
   entryCount: number;
 }
