@@ -28,6 +28,19 @@ function todayStr(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+// Auto-format time: "0900" → "09:00", "900" → "09:00", "9:00" → "09:00"
+function formatTimeInput(val: string): string {
+  if (!val) return '';
+  const cleaned = val.replace(/[^0-9:]/g, '');
+  if (!cleaned) return '';
+  if (!cleaned.includes(':')) {
+    const padded = cleaned.padStart(4, '0');
+    return `${padded.slice(0, 2)}:${padded.slice(2, 4)}`;
+  }
+  const parts = cleaned.split(':');
+  return `${parts[0].padStart(2, '0')}:${(parts[1] || '00').padStart(2, '0')}`;
+}
+
 type FormData = Partial<LogbookEntry> & { [key: string]: unknown };
 
 const EMPTY_FORM: FormData = {
@@ -292,33 +305,39 @@ export default function LogbookView() {
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Sched Out *</span>
-                <input type="time" value={(form.scheduledOut as string) || ''} onChange={e => setField('scheduledOut', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.scheduledOut as string) || ''} onChange={e => setField('scheduledOut', e.target.value)}
+                  onBlur={e => setField('scheduledOut', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Sched In *</span>
-                <input type="time" value={(form.scheduledIn as string) || ''} onChange={e => setField('scheduledIn', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.scheduledIn as string) || ''} onChange={e => setField('scheduledIn', e.target.value)}
+                  onBlur={e => setField('scheduledIn', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Block Off</span>
-                <input type="time" value={(form.blockOff as string) || ''} onChange={e => setField('blockOff', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.blockOff as string) || ''} onChange={e => setField('blockOff', e.target.value)}
+                  onBlur={e => setField('blockOff', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Take-Off</span>
-                <input type="time" value={(form.takeOffTime as string) || ''} onChange={e => setField('takeOffTime', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.takeOffTime as string) || ''} onChange={e => setField('takeOffTime', e.target.value)}
+                  onBlur={e => setField('takeOffTime', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Landing</span>
-                <input type="time" value={(form.landingTime as string) || ''} onChange={e => setField('landingTime', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.landingTime as string) || ''} onChange={e => setField('landingTime', e.target.value)}
+                  onBlur={e => setField('landingTime', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
               <label className="block">
                 <span className="text-xs text-gray-500">Block In</span>
-                <input type="time" value={(form.blockIn as string) || ''} onChange={e => setField('blockIn', e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                <input type="text" placeholder="0900" value={(form.blockIn as string) || ''} onChange={e => setField('blockIn', e.target.value)}
+                  onBlur={e => setField('blockIn', formatTimeInput(e.target.value))}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono" />
               </label>
             </div>
 
