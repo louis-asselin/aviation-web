@@ -225,7 +225,6 @@ export default function LogbookView() {
     } catch (e) { console.error(e); }
   };
 
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const exportPeriods = [
     { label: 'From Beginning', value: 'all' },
     { label: 'Last 6 Months', value: '6months' },
@@ -513,25 +512,22 @@ export default function LogbookView() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Flight Logbook</h2>
         <div className="flex gap-2">
-          <div className="relative">
-            <button onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-              <Download className="w-4 h-4" /> Export
-            </button>
-            {showExportMenu && (
-              <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 w-48">
-                {exportPeriods.map(p => (
-                  <button key={p.value} onClick={() => handleExport(p.value)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-              </>
-            )}
-          </div>
+          <select
+            id="exportPeriod"
+            defaultValue="all"
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700"
+          >
+            {exportPeriods.map(p => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+          <button onClick={() => {
+            const sel = (document.getElementById('exportPeriod') as HTMLSelectElement)?.value || 'all';
+            handleExport(sel);
+          }}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <Download className="w-4 h-4" /> Export
+          </button>
           {entries.length > 0 && (
             <button onClick={openNextLeg}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600">
