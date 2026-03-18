@@ -767,6 +767,11 @@ export interface LogbookEntry {
   dualReceived: number;
   dualGiven: number;
   simulatorTime: number;
+  singleEngineTime: number;
+  multiEngineTime: number;
+  jetTime: number;
+  turbineTime: number;
+  reciprocatingTime: number;
   takeoffDay: number;
   takeoffNight: number;
   landingDay: number;

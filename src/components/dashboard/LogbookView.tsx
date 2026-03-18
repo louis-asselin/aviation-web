@@ -52,6 +52,7 @@ const EMPTY_FORM: FormData = {
   picName: '', picLicenceNumber: '', sicName: '', sicLicenceNumber: '',
   ifrTime: 0, nightTime: 0, picTime: 0, sicTime: 0, reliefTime: 0,
   xcTime: 0, multiPilotTime: 0, dualReceived: 0, dualGiven: 0, simulatorTime: 0,
+  singleEngineTime: 0, multiEngineTime: 0, jetTime: 0, turbineTime: 0, reciprocatingTime: 0,
   takeoffDay: 0, takeoffNight: 0, landingDay: 0, landingNight: 0, autoland: 0,
   holdCount: null, approachCount: null, goAroundCount: null,
   remarks: '',
@@ -417,6 +418,11 @@ export default function LogbookView() {
                 { key: 'dualReceived', label: 'Dual Received', disabled: isPicUser },
                 { key: 'dualGiven', label: 'Dual Given' },
                 { key: 'simulatorTime', label: 'Simulator' },
+                { key: 'singleEngineTime', label: 'Single Engine' },
+                { key: 'multiEngineTime', label: 'Multi Engine' },
+                { key: 'jetTime', label: 'Jet' },
+                { key: 'turbineTime', label: 'Turbine' },
+                { key: 'reciprocatingTime', label: 'Reciprocating' },
               ].map(({ key, label, auto, disabled }) => {
                 const val = (form[key] as number) || 0;
                 const checked = val > 0 || auto;
