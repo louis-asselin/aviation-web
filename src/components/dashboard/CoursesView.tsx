@@ -419,104 +419,76 @@ export default function CoursesView() {
           </div>
         </div>
 
-        {/* Modules - clickable to see their files */}
+        {/* Course Content — all files inline (like iOS) */}
         {isLoadingModules ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
               <div key={i} className="card animate-pulse h-16" />
             ))}
           </div>
-        ) : modules.length === 0 ? (
-          <div className="card text-center py-8">
-            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No modules available for this course.</p>
-          </div>
         ) : (
-          <div className="space-y-3">
-            {modules.sort((a, b) => a.orderIndex - b.orderIndex).map((module, index) => (
-              <div
-                key={module.id}
-                onClick={() => openModule(module)}
-                className="card hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
-              >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  module.progress === 100 ? 'bg-green-100' : 'bg-accent-50'
-                }`}>
-                  {module.progress === 100 ? (
-                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span className="font-bold text-accent-500">{index + 1}</span>
-                  )}
+          <div className="space-y-4">
+            {/* Course-level files first */}
+            {courseFiles.length > 0 && (
+              <div className="card">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-5 h-5 text-accent-500" />
+                  <h2 className="font-semibold text-gray-900">Course Documents</h2>
+                  <span className="text-xs font-semibold text-white bg-accent-500 px-2 py-0.5 rounded-full ml-auto">
+                    {courseFiles.length}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900">{module.title}</h3>
-                  {module.description && (
-                    <p className="text-sm text-gray-500 mt-0.5 truncate">{module.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  {(module.fileCount ?? 0) > 0 && (
-                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                      {module.fileCount} file{(module.fileCount ?? 0) > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {(module.questionCount ?? 0) > 0 && (
-                    <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">
-                      {module.questionCount} Q
-                    </span>
-                  )}
-                  {module.progress !== undefined && module.progress > 0 && (
-                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-green-500 rounded-full"
-                        style={{ width: `${module.progress}%` }}
-                      />
+                <div className="space-y-2">
+                  {courseFiles.map(file => (
+                    <div key={file.id} onClick={() => { setViewingFile(file); if (selectedCourse) markAllModulesCompleted(selectedCourse.id); }}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-pointer">
+                      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {getFileIcon(file.mimeType)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
+                        <span className="text-xs text-gray-400">{formatFileSize(file.sizeBytes)}</span>
+                      </div>
+                      <Eye className="w-5 h-5 text-gray-400" />
                     </div>
-                  )}
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modules with inline file access */}
+            {modules.sort((a, b) => a.orderIndex - b.orderIndex).map((module, index) => (
+              <div key={module.id} className="card">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    module.progress === 100 ? 'bg-green-100' : 'bg-accent-50'
+                  }`}>
+                    {module.progress === 100 ? (
+                      <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className="font-bold text-accent-500">{index + 1}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900">{module.title}</h3>
+                    {module.description && <p className="text-sm text-gray-500 mt-0.5 truncate">{module.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(module.fileCount ?? 0) > 0 && (
+                      <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{module.fileCount} file{(module.fileCount ?? 0) > 1 ? 's' : ''}</span>
+                    )}
+                    {(module.questionCount ?? 0) > 0 && (
+                      <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">{module.questionCount} Q</span>
+                    )}
+                    <button onClick={() => openModule(module)} className="text-xs text-blue-600 hover:underline ml-2">
+                      Open
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Course-level files (not linked to any module) */}
-        {courseFiles.length > 0 && (
-          <div className="card">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-accent-500" />
-              <h2 className="font-semibold text-gray-900">Course Documents</h2>
-              <span className="text-xs font-semibold text-white bg-accent-500 px-2 py-0.5 rounded-full ml-auto">
-                {courseFiles.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {courseFiles.map((file) => (
-                <div
-                  key={file.id}
-                  onClick={() => {
-                    setViewingFile(file);
-                    // Mark all modules as completed for course-level files
-                    if (selectedCourse) markAllModulesCompleted(selectedCourse.id);
-                  }}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {getFileIcon(file.mimeType)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{file.originalName}</h3>
-                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
-                      <span>{formatFileSize(file.sizeBytes)}</span>
-                      <span>{file.mimeType?.split('/').pop()?.toUpperCase()}</span>
-                    </div>
-                  </div>
-                  <Eye className="w-5 h-5 text-gray-400" />
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </div>
