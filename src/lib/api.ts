@@ -448,12 +448,14 @@ export const logbooksApi = {
   },
 
   // Export
-  exportPdf: (token: string, period: string = 'all') => {
-    return fetch(`${API_BASE}/logbooks/export-pdf`, {
+  exportPdf: async (token: string, period: string = 'all') => {
+    const r = await fetch(`${API_BASE}/logbooks/export-pdf`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ period }),
-    }).then(r => r.blob());
+    });
+    if (!r.ok) throw new Error(`Export failed: ${r.status}`);
+    return r.blob();
   },
 };
 

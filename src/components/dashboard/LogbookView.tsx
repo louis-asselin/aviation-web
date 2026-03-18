@@ -240,8 +240,11 @@ export default function LogbookView() {
     setShowExportMenu(false);
     try {
       const blob = await logbooksApi.exportPdf(token, period);
+      if (blob.size === 0) {
+        alert('Export returned empty. Please try again.');
+        return;
+      }
       const url = URL.createObjectURL(blob);
-      // Download as HTML file
       const a = document.createElement('a');
       a.href = url;
       a.download = `logbook_${period}.html`;
@@ -249,7 +252,10 @@ export default function LogbookView() {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (e) { console.error(e); }
+    } catch (e: unknown) {
+      console.error('Export error:', e);
+      alert(`Export failed: ${(e as Error).message}`);
+    }
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -513,6 +519,8 @@ export default function LogbookView() {
               <Download className="w-4 h-4" /> Export
             </button>
             {showExportMenu && (
+              <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
               <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 w-48">
                 {exportPeriods.map(p => (
                   <button key={p.value} onClick={() => handleExport(p.value)}
@@ -521,6 +529,7 @@ export default function LogbookView() {
                   </button>
                 ))}
               </div>
+              </>
             )}
           </div>
           {entries.length > 0 && (
