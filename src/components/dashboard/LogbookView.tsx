@@ -76,15 +76,22 @@ export default function LogbookView() {
 
   const userName = user ? `${user.firstName} ${user.lastName}` : '';
 
+  const [debugMsg, setDebugMsg] = useState('');
+
   const fetchEntries = useCallback(async () => {
-    if (!token) return;
+    if (!token) { setDebugMsg('No token'); return; }
     setIsLoading(true);
+    setDebugMsg('Loading...');
     try {
       const res = await logbooksApi.list(token, { page, limit });
-      setEntries(res.data);
-      setTotal(res.total);
-    } catch (e) {
+      setEntries(res.data || []);
+      setTotal(res.total || 0);
+      setDebugMsg(`Loaded ${res.data?.length || 0} entries (total: ${res.total || 0})`);
+    } catch (e: unknown) {
+      const msg = (e as Error).message || 'Unknown error';
       console.error('Fetch entries error:', e);
+      setDebugMsg(`Error: ${msg}`);
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -519,6 +526,7 @@ export default function LogbookView() {
 
   return (
     <div className="p-6">
+      {debugMsg && <div className="mb-2 text-xs text-orange-500 bg-orange-50 px-3 py-1 rounded">{debugMsg}</div>}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Flight Logbook</h2>
