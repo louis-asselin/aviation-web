@@ -145,10 +145,18 @@ export default function CoursesView() {
             completionPercent: 1.0,
             totalTimeSpentSec: 0,
           }, token);
-          // Refresh courses list to update progress bars
-          coursesApi.list(token)
-            .then(d => setCourses(Array.isArray(d) ? d : []))
-            .catch(() => {});
+          // Refresh everything: courses list, selected course, and modules
+          const [updatedCourses, updatedModules] = await Promise.all([
+            coursesApi.list(token),
+            coursesApi.modules(selectedCourse.id, token),
+          ]);
+          const coursesList = Array.isArray(updatedCourses) ? updatedCourses : [];
+          setCourses(coursesList);
+          // Update selectedCourse with fresh progress
+          const freshCourse = coursesList.find((c: Course) => c.id === selectedCourse.id);
+          if (freshCourse) setSelectedCourse(freshCourse);
+          // Update modules with fresh progress
+          setModules(Array.isArray(updatedModules) ? updatedModules : []);
         } catch (progressErr) {
           console.error('Failed to update progress:', progressErr);
         }
