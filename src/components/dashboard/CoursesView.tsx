@@ -256,16 +256,27 @@ export default function CoursesView() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 180px)' }} onContextMenu={e => e.preventDefault()}>
           {!fileBlobUrl ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full flex-col gap-3">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-2">
+                Open file directly
+              </a>
             </div>
           ) : isPdf ? (
-            <iframe
-              src={`${fileBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-              className="w-full h-full"
-              title={viewingFile.originalName}
-              style={{ border: 'none' }}
-            />
+            <div className="w-full h-full flex flex-col">
+              <div className="flex justify-end p-2 bg-gray-50 border-b">
+                <a href={fileBlobUrl} download={viewingFile.originalName} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Download PDF
+                </a>
+              </div>
+              <iframe
+                src={`${fileBlobUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+                className="w-full flex-1"
+                title={viewingFile.originalName}
+                style={{ border: 'none' }}
+              />
+            </div>
           ) : isImage ? (
             <div className="w-full h-full flex items-center justify-center bg-gray-50 p-4">
               <img
@@ -275,8 +286,11 @@ export default function CoursesView() {
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-400">This file type cannot be previewed.</p>
+            <div className="flex items-center justify-center h-full flex-col gap-3">
+              <p className="text-gray-400">This file type cannot be previewed inline.</p>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                Open file in new tab
+              </a>
             </div>
           )}
         </div>

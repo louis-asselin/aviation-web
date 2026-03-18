@@ -526,7 +526,6 @@ export default function LogbookView() {
 
   return (
     <div className="p-6">
-      {debugMsg && <div className="mb-2 text-xs text-orange-500 bg-orange-50 px-3 py-1 rounded">{debugMsg}</div>}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Flight Logbook</h2>
