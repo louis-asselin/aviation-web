@@ -241,8 +241,14 @@ export default function LogbookView() {
     try {
       const blob = await logbooksApi.exportPdf(token, period);
       const url = URL.createObjectURL(blob);
-      const w = window.open(url, '_blank');
-      if (w) w.focus();
+      // Download as HTML file
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logbook_${period}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) { console.error(e); }
   };
 
