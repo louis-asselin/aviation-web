@@ -247,10 +247,15 @@ export default function LogbookView() {
         body: JSON.stringify({ period }),
       });
       if (!resp.ok) throw new Error(`Server error ${resp.status}`);
-      const html = await resp.text();
-      // Open in new window — user can Cmd+P to save as PDF
-      const w = window.open('', '_blank');
-      if (w) { w.document.write(html); w.document.close(); }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logbook_${period}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e: unknown) {
       alert(`Export failed: ${(e as Error).message}`);
     }
