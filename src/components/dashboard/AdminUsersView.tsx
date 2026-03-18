@@ -7,14 +7,19 @@ import { Users, Search, Shield, ShieldAlert, KeyRound, Mail, Plus, ChevronDown }
 import { getRoleLabel, getRoleColor, formatDate, getInitials } from '@/lib/utils';
 
 export default function AdminUsersView() {
-  const { token } = useAuth();
+  const { token, user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editRole, setEditRole] = useState('');
+  const [editActive, setEditActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
-  useEffect(() => {
+  const loadUsers = () => {
     if (!token) return;
     usersApi.list(token)
       .then(data => {
@@ -24,7 +29,34 @@ export default function AdminUsersView() {
       })
       .catch(err => console.error('Failed to load users:', err))
       .finally(() => setIsLoading(false));
-  }, [token]);
+  };
+
+  useEffect(() => { loadUsers(); }, [token]);
+
+  const openEdit = (u: User) => {
+    setEditingUser(u);
+    setEditRole(u.role);
+    setEditActive(u.isActive !== false);
+    setSaveMsg('');
+  };
+
+  const saveUser = async () => {
+    if (!editingUser || !token) return;
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      await usersApi.update(editingUser.id as number, {
+        role: editRole,
+        isActive: editActive,
+      } as Partial<User>, token);
+      setSaveMsg('Saved!');
+      loadUsers();
+      setTimeout(() => setEditingUser(null), 800);
+    } catch (e: unknown) {
+      setSaveMsg(`Error: ${(e as Error).message}`);
+    }
+    setSaving(false);
+  };
 
   useEffect(() => {
     let result = users;
@@ -109,7 +141,7 @@ export default function AdminUsersView() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={u.id} onClick={() => openEdit(u)} className="hover:bg-gray-50 transition-colors cursor-pointer">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-accent-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
@@ -167,6 +199,60 @@ export default function AdminUsersView() {
           </div>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingUser(null)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-accent-500 rounded-full flex items-center justify-center text-white font-semibold">
+                {getInitials(editingUser.firstName, editingUser.lastName)}
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-900">{editingUser.firstName} {editingUser.lastName}</h2>
+                <p className="text-sm text-gray-500">{editingUser.email}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option value="student">Student</option>
+                  <option value="pilot">Pilot</option>
+                  <option value="instructor">Instructor</option>
+                  <option value="org_admin">Org Admin</option>
+                  {currentUser?.role === 'admin' && <option value="admin">Admin</option>}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">Active</label>
+                <button onClick={() => setEditActive(!editActive)}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${editActive ? 'bg-green-500' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editActive ? 'translate-x-5' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {saveMsg && (
+              <p className={`text-sm ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={saveUser} disabled={saving}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button onClick={() => setEditingUser(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
