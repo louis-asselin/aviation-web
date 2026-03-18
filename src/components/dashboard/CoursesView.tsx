@@ -134,6 +134,25 @@ export default function CoursesView() {
       const data = await filesApi.listByModule(module.id, token);
       console.log(`[openModule] module ${module.id} files:`, data);
       setModuleFiles(Array.isArray(data) ? data : []);
+
+      // Mark module as completed when opened
+      if (selectedCourse) {
+        try {
+          await coursesApi.updateProgress({
+            moduleId: module.id,
+            courseId: selectedCourse.id,
+            status: 'completed',
+            completionPercent: 1.0,
+            totalTimeSpentSec: 0,
+          }, token);
+          // Refresh courses list to update progress bars
+          coursesApi.list(token)
+            .then(d => setCourses(Array.isArray(d) ? d : []))
+            .catch(() => {});
+        } catch (progressErr) {
+          console.error('Failed to update progress:', progressErr);
+        }
+      }
     } catch (err: unknown) {
       console.error('Failed to load module files:', err);
       const msg = err instanceof Error ? err.message : 'Failed to load files';
@@ -368,8 +387,16 @@ export default function CoursesView() {
                 onClick={() => openModule(module)}
                 className="card hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4"
               >
-                <div className="w-10 h-10 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="font-bold text-accent-500">{index + 1}</span>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  module.progress === 100 ? 'bg-green-100' : 'bg-accent-50'
+                }`}>
+                  {module.progress === 100 ? (
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <span className="font-bold text-accent-500">{index + 1}</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900">{module.title}</h3>

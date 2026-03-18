@@ -108,6 +108,17 @@ export const coursesApi = {
   progress: (courseId: string | number, token: string) =>
     api(`/courses/${courseId}/progress`, { token }),
 
+  updateProgress: (data: {
+    moduleId: string | number;
+    courseId: string | number;
+    status: string;
+    completionPercent: number;
+    totalTimeSpentSec?: number;
+    pdfFullyRead?: boolean;
+    pdfLastPageReached?: number;
+  }, token: string) =>
+    api('/courses/progress', { method: 'PUT', body: data, token }),
+
   create: (data: { title: string; description: string; organizationId: string | number; subject?: string; level?: string; contentType?: string }, token: string) =>
     api<Course>('/courses', { method: 'POST', body: data, token }),
 
