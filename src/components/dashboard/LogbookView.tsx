@@ -236,7 +236,6 @@ export default function LogbookView() {
 
   const handleExport = async (period: string = 'all') => {
     if (!token) return;
-    setShowExportMenu(false);
     try {
       const blob = await logbooksApi.exportPdf(token, period);
       if (blob.size === 0) {
