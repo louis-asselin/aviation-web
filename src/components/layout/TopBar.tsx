@@ -2,16 +2,17 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { PageId } from './DashboardLayout';
-import { Menu, User, Search } from 'lucide-react';
+import { Menu, User, Search, RefreshCw } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import NotificationCenter from '@/components/dashboard/NotificationCenter';
 
 interface TopBarProps {
   onMenuToggle: () => void;
   onNavigate: (page: PageId) => void;
+  onRefresh?: () => void;
 }
 
-export default function TopBar({ onMenuToggle, onNavigate }: TopBarProps) {
+export default function TopBar({ onMenuToggle, onNavigate, onRefresh }: TopBarProps) {
   const { user } = useAuth();
 
   return (
@@ -36,6 +37,17 @@ export default function TopBar({ onMenuToggle, onNavigate }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Refresh */}
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Notifications */}
         <NotificationCenter />
 

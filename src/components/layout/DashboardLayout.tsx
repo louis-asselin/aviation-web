@@ -23,7 +23,10 @@ export type PageId = 'dashboard' | 'content' | 'courses' | 'users' | 'organizati
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useAuth();
+
+  const handleRefresh = () => setRefreshKey(k => k + 1);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -91,9 +94,12 @@ export default function DashboardLayout() {
         <TopBar
           onMenuToggle={() => setSidebarOpen(true)}
           onNavigate={setCurrentPage}
+          onRefresh={handleRefresh}
         />
         <main className="flex-1 p-4 lg:p-8 overflow-auto">
-          {renderPage()}
+          <div key={refreshKey}>
+            {renderPage()}
+          </div>
         </main>
       </div>
     </div>

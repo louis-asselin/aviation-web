@@ -175,6 +175,36 @@ export default function CoursesView() {
     return `${API_BASE}/files/${file.id}/download?token=${token}`;
   };
 
+  // Mark all modules of a course as completed (for course-level files)
+  const markAllModulesCompleted = async (courseId: string | number) => {
+    if (!token) return;
+    try {
+      const mods = await coursesApi.modules(courseId, token);
+      const modList = Array.isArray(mods) ? mods : [];
+      for (const mod of modList) {
+        await coursesApi.updateProgress({
+          moduleId: mod.id,
+          courseId,
+          status: 'completed',
+          completionPercent: 1.0,
+          totalTimeSpentSec: 0,
+        }, token);
+      }
+      // Refresh
+      const updatedCourses = await coursesApi.list(token);
+      const cl = Array.isArray(updatedCourses) ? updatedCourses : [];
+      setCourses(cl);
+      if (selectedCourse) {
+        const fresh = cl.find((c: Course) => c.id === selectedCourse.id);
+        if (fresh) setSelectedCourse(fresh);
+        const updMods = await coursesApi.modules(selectedCourse.id, token);
+        setModules(Array.isArray(updMods) ? updMods : []);
+      }
+    } catch (e) {
+      console.error('markAllModulesCompleted error:', e);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -452,7 +482,11 @@ export default function CoursesView() {
               {courseFiles.map((file) => (
                 <div
                   key={file.id}
-                  onClick={() => setViewingFile(file)}
+                  onClick={() => {
+                    setViewingFile(file);
+                    // Mark all modules as completed for course-level files
+                    if (selectedCourse) markAllModulesCompleted(selectedCourse.id);
+                  }}
                   className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
