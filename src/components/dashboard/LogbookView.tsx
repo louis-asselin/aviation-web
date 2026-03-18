@@ -234,26 +234,27 @@ export default function LogbookView() {
     { label: 'Last 24 Hours', value: '24hours' },
   ];
 
+  const [isExporting, setIsExporting] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://spirited-friendship-production-fb20.up.railway.app/api';
+
   const handleExport = async (period: string = 'all') => {
-    if (!token) return;
+    if (!token || isExporting) return;
+    setIsExporting(true);
     try {
-      const blob = await logbooksApi.exportPdf(token, period);
-      if (blob.size === 0) {
-        alert('Export returned empty. Please try again.');
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `logbook_${period}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const resp = await fetch(`${API_URL}/logbooks/export-pdf`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ period }),
+      });
+      if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+      const html = await resp.text();
+      // Open in new window — user can Cmd+P to save as PDF
+      const w = window.open('', '_blank');
+      if (w) { w.document.write(html); w.document.close(); }
     } catch (e: unknown) {
-      console.error('Export error:', e);
       alert(`Export failed: ${(e as Error).message}`);
     }
+    setIsExporting(false);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -524,8 +525,9 @@ export default function LogbookView() {
             const sel = (document.getElementById('exportPeriod') as HTMLSelectElement)?.value || 'all';
             handleExport(sel);
           }}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-            <Download className="w-4 h-4" /> Export
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50">
+            <Download className="w-4 h-4" /> {isExporting ? 'Exporting...' : 'Export PDF'}
           </button>
           {entries.length > 0 && (
             <button onClick={openNextLeg}
