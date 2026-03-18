@@ -225,16 +225,24 @@ export default function LogbookView() {
     } catch (e) { console.error(e); }
   };
 
-  const handleExport = async () => {
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportPeriods = [
+    { label: 'From Beginning', value: 'all' },
+    { label: 'Last 6 Months', value: '6months' },
+    { label: 'Last 90 Days', value: '90days' },
+    { label: 'Last Month', value: '30days' },
+    { label: 'Last 7 Days', value: '7days' },
+    { label: 'Last 24 Hours', value: '24hours' },
+  ];
+
+  const handleExport = async (period: string = 'all') => {
     if (!token) return;
+    setShowExportMenu(false);
     try {
-      const blob = await logbooksApi.exportPdf(token);
+      const blob = await logbooksApi.exportPdf(token, period);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'logbook.html';
-      a.click();
-      URL.revokeObjectURL(url);
+      const w = window.open(url, '_blank');
+      if (w) w.focus();
     } catch (e) { console.error(e); }
   };
 
@@ -493,10 +501,22 @@ export default function LogbookView() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Flight Logbook</h2>
         <div className="flex gap-2">
-          <button onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-            <Download className="w-4 h-4" /> Export
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+              <Download className="w-4 h-4" /> Export
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 w-48">
+                {exportPeriods.map(p => (
+                  <button key={p.value} onClick={() => handleExport(p.value)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {entries.length > 0 && (
             <button onClick={openNextLeg}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600">

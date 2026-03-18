@@ -448,11 +448,11 @@ export const logbooksApi = {
   },
 
   // Export
-  exportPdf: (token: string) => {
-    // Returns HTML — fetch as blob
+  exportPdf: (token: string, period: string = 'all') => {
     return fetch(`${API_BASE}/logbooks/export-pdf`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period }),
     }).then(r => r.blob());
   },
 };
