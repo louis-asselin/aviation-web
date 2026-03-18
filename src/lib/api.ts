@@ -20,6 +20,7 @@ export async function api<T = unknown>(endpoint: string, options: ApiOptions = {
 
   const config: RequestInit = {
     method,
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       ...headers,
