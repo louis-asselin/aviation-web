@@ -57,9 +57,7 @@ export default function Sidebar({ currentPage, onNavigate, isOpen, onClose }: Si
       {/* Header */}
       <div className="p-5 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center">
-            <Plane className="w-5 h-5" />
-          </div>
+          <img src="/logo.svg" alt="Aviation Learning" className="w-9 h-9 rounded-lg" />
           <div>
             <h1 className="font-bold text-sm">Aviation Learning</h1>
             <p className="text-xs text-white/50">v1.0</p>
