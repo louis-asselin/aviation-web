@@ -33,7 +33,32 @@ export default function AdminUsersView() {
 
   useEffect(() => { loadUsers(); }, [token]);
 
+  const ROLE_LEVEL: Record<string, number> = { admin: 4, org_admin: 3, instructor: 2, pilot: 1, student: 1 };
+  const myLevel = ROLE_LEVEL[currentUser?.role || ''] || 0;
+
+  const canEdit = (u: User) => {
+    if (currentUser?.role === 'admin') return true;
+    const targetLevel = ROLE_LEVEL[u.role] || 0;
+    return targetLevel < myLevel;
+  };
+
+  const allowedRoles = () => {
+    const all = [
+      { value: 'student', label: 'Student', level: 1 },
+      { value: 'pilot', label: 'Pilot', level: 1 },
+      { value: 'instructor', label: 'Instructor', level: 2 },
+      { value: 'org_admin', label: 'Org Admin', level: 3 },
+      { value: 'admin', label: 'Admin', level: 4 },
+    ];
+    if (currentUser?.role === 'admin') return all;
+    return all.filter(r => r.level < myLevel);
+  };
+
   const openEdit = (u: User) => {
+    if (!canEdit(u)) {
+      alert('You cannot edit users at or above your role level.');
+      return;
+    }
     setEditingUser(u);
     setEditRole(u.role);
     setEditActive(u.isActive !== false);
@@ -141,7 +166,8 @@ export default function AdminUsersView() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredUsers.map((u) => (
-                <tr key={u.id} onClick={() => openEdit(u)} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                <tr key={u.id} onClick={() => openEdit(u)}
+                  className={`transition-colors ${canEdit(u) ? 'hover:bg-gray-50 cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-accent-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
@@ -219,11 +245,9 @@ export default function AdminUsersView() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select value={editRole} onChange={e => setEditRole(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option value="student">Student</option>
-                  <option value="pilot">Pilot</option>
-                  <option value="instructor">Instructor</option>
-                  <option value="org_admin">Org Admin</option>
-                  {currentUser?.role === 'admin' && <option value="admin">Admin</option>}
+                  {allowedRoles().map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
 
