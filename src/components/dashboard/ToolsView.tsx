@@ -1,48 +1,88 @@
 'use client';
 
 import { useState } from 'react';
-import { Fuel, Wind, ArrowLeftRight, Mountain, Timer, Gauge, Plane, CloudSun, Scale, Thermometer, Zap, ArrowDown, Navigation, Clock, Sun, RotateCcw, Weight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Fuel, Wind, ArrowLeftRight, Mountain, Timer, Gauge, Plane, CloudSun, Scale, Thermometer, Zap, ArrowDown, Navigation, Clock, Sun, RotateCcw, Weight, Lock, Star } from 'lucide-react';
 
 type ToolId = 'fuel' | 'wind' | 'units' | 'density' | 'distance' | 'pressure' | 'metar' | 'mass-balance' | 'tas' | 'mach' | 'tod' | 'e6b' | 'endurance' | 'sunrise' | 'holding' | 'mass-check' | 'ftl' | null;
 
+const FREE_TOOLS = new Set<string>(['fuel', 'units', 'distance', 'pressure']);
+
 export default function ToolsView() {
+  const { user } = useAuth();
   const [activeTool, setActiveTool] = useState<ToolId>(null);
 
-  const tools = [
-    { id: 'wind' as ToolId, name: 'Wind Component', icon: Wind, color: 'text-blue-500 bg-blue-50' },
-    { id: 'fuel' as ToolId, name: 'Fuel Calculator', icon: Fuel, color: 'text-orange-500 bg-orange-50' },
-    { id: 'ftl' as ToolId, name: 'Duty / FTL', icon: Clock, color: 'text-indigo-500 bg-indigo-50' },
-    { id: 'metar' as ToolId, name: 'METAR Decoder', icon: CloudSun, color: 'text-cyan-500 bg-cyan-50' },
-    { id: 'mass-balance' as ToolId, name: 'Mass & Balance', icon: Scale, color: 'text-amber-500 bg-amber-50' },
-    { id: 'tas' as ToolId, name: 'TAS Calculator', icon: Thermometer, color: 'text-rose-500 bg-rose-50' },
-    { id: 'mach' as ToolId, name: 'Mach Converter', icon: Zap, color: 'text-violet-500 bg-violet-50' },
-    { id: 'tod' as ToolId, name: 'Top of Descent', icon: ArrowDown, color: 'text-emerald-500 bg-emerald-50' },
-    { id: 'e6b' as ToolId, name: 'E6B Computer', icon: Navigation, color: 'text-sky-500 bg-sky-50' },
-    { id: 'endurance' as ToolId, name: 'Endurance', icon: Timer, color: 'text-red-500 bg-red-50' },
-    { id: 'sunrise' as ToolId, name: 'Sunrise / Sunset', icon: Sun, color: 'text-yellow-500 bg-yellow-50' },
-    { id: 'holding' as ToolId, name: 'Holding Timer', icon: RotateCcw, color: 'text-pink-500 bg-pink-50' },
-    { id: 'mass-check' as ToolId, name: 'Mass Check', icon: Weight, color: 'text-stone-500 bg-stone-50' },
-    { id: 'units' as ToolId, name: 'Unit Converter', icon: ArrowLeftRight, color: 'text-green-500 bg-green-50' },
-    { id: 'density' as ToolId, name: 'Density Altitude', icon: Mountain, color: 'text-purple-500 bg-purple-50' },
-    { id: 'distance' as ToolId, name: 'Distance / Time', icon: Plane, color: 'text-teal-500 bg-teal-50' },
-    { id: 'pressure' as ToolId, name: 'Pressure Converter', icon: Gauge, color: 'text-gray-500 bg-gray-50' },
+  const isAdmin = user?.role === 'admin' || user?.role === 'org_admin';
+  const isPremium = (user as any)?.subscriptionTier === 'premium' || isAdmin;
+
+  const tools: { id: ToolId; name: string; icon: any; color: string }[] = [
+    { id: 'wind', name: 'Wind Component', icon: Wind, color: 'text-blue-500 bg-blue-50' },
+    { id: 'fuel', name: 'Fuel Calculator', icon: Fuel, color: 'text-orange-500 bg-orange-50' },
+    { id: 'ftl', name: 'Duty / FTL', icon: Clock, color: 'text-indigo-500 bg-indigo-50' },
+    { id: 'metar', name: 'METAR Decoder', icon: CloudSun, color: 'text-cyan-500 bg-cyan-50' },
+    { id: 'mass-balance', name: 'Mass & Balance', icon: Scale, color: 'text-amber-500 bg-amber-50' },
+    { id: 'tas', name: 'TAS Calculator', icon: Thermometer, color: 'text-rose-500 bg-rose-50' },
+    { id: 'mach', name: 'Mach Converter', icon: Zap, color: 'text-violet-500 bg-violet-50' },
+    { id: 'tod', name: 'Top of Descent', icon: ArrowDown, color: 'text-emerald-500 bg-emerald-50' },
+    { id: 'e6b', name: 'E6B Computer', icon: Navigation, color: 'text-sky-500 bg-sky-50' },
+    { id: 'endurance', name: 'Endurance', icon: Timer, color: 'text-red-500 bg-red-50' },
+    { id: 'sunrise', name: 'Sunrise / Sunset', icon: Sun, color: 'text-yellow-500 bg-yellow-50' },
+    { id: 'holding', name: 'Holding Timer', icon: RotateCcw, color: 'text-pink-500 bg-pink-50' },
+    { id: 'mass-check', name: 'Mass Check', icon: Weight, color: 'text-stone-500 bg-stone-50' },
+    { id: 'units', name: 'Unit Converter', icon: ArrowLeftRight, color: 'text-green-500 bg-green-50' },
+    { id: 'density', name: 'Density Altitude', icon: Mountain, color: 'text-purple-500 bg-purple-50' },
+    { id: 'distance', name: 'Distance / Time', icon: Plane, color: 'text-teal-500 bg-teal-50' },
+    { id: 'pressure', name: 'Pressure Converter', icon: Gauge, color: 'text-gray-500 bg-gray-50' },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Aviation Tools</h1>
 
+      {/* Premium banner for basic users */}
+      {!isPremium && (
+        <div className="mb-6 bg-gradient-to-r from-primary-500 to-primary-400 rounded-xl p-4 text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Star className="w-8 h-8 text-yellow-300" />
+            <div>
+              <p className="font-bold">Upgrade to Premium</p>
+              <p className="text-sm text-white/80">Unlock all 17 aviation tools</p>
+            </div>
+          </div>
+          <button className="bg-white text-primary-500 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-gray-100">
+            Upgrade
+          </button>
+        </div>
+      )}
+
       {!activeTool ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {tools.map(tool => (
-            <button key={tool.id} onClick={() => setActiveTool(tool.id)}
-              className="p-6 bg-white rounded-xl border hover:shadow-md transition-all text-left">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${tool.color}`}>
-                <tool.icon className="w-6 h-6" />
+          {tools.map(tool => {
+            const isFree = tool.id ? FREE_TOOLS.has(tool.id) : false;
+            const locked = !isFree && !isPremium;
+
+            return locked ? (
+              <div key={tool.id}
+                className="p-6 bg-white rounded-xl border text-left opacity-60 relative cursor-not-allowed">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${tool.color} opacity-40`}>
+                  <tool.icon className="w-6 h-6" />
+                </div>
+                <p className="font-semibold text-gray-500">{tool.name}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Lock className="w-3 h-3 text-gray-400" />
+                  <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded">PREMIUM</span>
+                </div>
               </div>
-              <p className="font-semibold text-gray-900">{tool.name}</p>
-            </button>
-          ))}
+            ) : (
+              <button key={tool.id} onClick={() => setActiveTool(tool.id)}
+                className="p-6 bg-white rounded-xl border hover:shadow-md transition-all text-left">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${tool.color}`}>
+                  <tool.icon className="w-6 h-6" />
+                </div>
+                <p className="font-semibold text-gray-900">{tool.name}</p>
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div>
@@ -225,108 +265,276 @@ function FuelCalc() {
 }
 
 // ====== DUTY / FTL CALCULATOR ======
+function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <span className="text-sm text-gray-700">{label}</span>
+      <button onClick={() => onChange(!value)}
+        className={`w-10 h-5 rounded-full transition-colors ${value ? 'bg-green-500' : 'bg-gray-300'}`}>
+        <div className={`w-4 h-4 bg-white rounded-full transition-transform ml-0.5 ${value ? 'translate-x-5' : ''}`} />
+      </button>
+    </div>
+  );
+}
+
 function FTLCalc() {
   const [regulation, setRegulation] = useState<'oro' | 'subq' | 'part135'>('oro');
-  const [reportTime, setReportTime] = useState('');
-  const [sectors, setSectors] = useState('1');
+  const [reportTime, setReportTime] = useState('6');
+  const [sectors, setSectors] = useState('2');
   const [acclimatized, setAcclimatized] = useState(true);
   const [extension, setExtension] = useState(false);
-  const [priorRest, setPriorRest] = useState('12');
+  const [homeBase, setHomeBase] = useState(true);
+  const [cmdDiscretion, setCmdDiscretion] = useState(false);
+  const [augmented, setAugmented] = useState(false);
+  const [crewType, setCrewType] = useState(0); // 0=1 pilot, 1=2 pilots
+  const [lastDuty, setLastDuty] = useState('10');
+  const [lastRest, setLastRest] = useState('12');
 
   const reportHour = parseFloat(reportTime) || 6;
-  const numSectors = parseInt(sectors) || 1;
-  const restHours = parseFloat(priorRest) || 12;
+  const numSectors = Math.max(1, parseInt(sectors) || 2);
 
-  // ORO.FTL.205 Max FDP table (acclimatized, by start time window)
-  function getOroMaxFDP(startHour: number, sectorCount: number): number {
-    let baseFDP: number;
-    if (startHour >= 6 && startHour < 14) baseFDP = 13;
-    else if (startHour >= 14 && startHour < 17) baseFDP = 12.25;
-    else if (startHour >= 17 && startHour < 22) baseFDP = 11.5;
-    else if (startHour >= 22 || startHour < 5) baseFDP = 11;
-    else baseFDP = 12; // 05:00-05:59
-    // Reduction: 30min per sector beyond 1, max reduction varies
-    const reduction = Math.max(0, (sectorCount - 1) * 0.5);
-    return Math.max(baseFDP - reduction, 9);
+  // ═══ ORO.FTL.205 Table 2 ═══
+  function getOroMaxFDP(startHour: number, sc: number): number {
+    const sIdx = Math.min(sc, 10) - 1;
+    const w1 = [13.0, 12.75, 12.5, 12.25, 12.0, 11.75, 11.5, 11.25, 11.0, 10.75]; // 06:00–13:29
+    const w2 = [12.25, 12.0, 11.75, 11.5, 11.25, 11.0, 10.75, 10.5, 10.25, 10.0]; // 13:30–17:59
+    const w3 = [11.5, 11.25, 11.0, 10.75, 10.5, 10.25, 10.0, 9.75, 9.5, 9.25];    // 18:00–01:59
+    const w4 = [12.0, 11.75, 11.5, 11.25, 11.0, 10.75, 10.5, 10.25, 10.0, 9.75];  // 02:00–05:59
+    if (startHour >= 6 && startHour < 13.5) return w1[sIdx];
+    if (startHour >= 13.5 && startHour < 18) return w2[sIdx];
+    if (startHour >= 18 || startHour < 2) return w3[sIdx];
+    return w4[sIdx];
   }
 
-  let maxFDP = 0, maxDuty = 0, minRest = 0, latestOffBlock = '', earliestNext = '';
+  // ═══ Subpart Q — WOCL helpers ═══
+  function calcWOCLOverlap(fdpStart: number, fdpEnd: number): number {
+    const wStart = 2, wEnd = 5 + 59/60;
+    const starts = [fdpStart, fdpStart - 24, fdpStart + 24];
+    let maxOvl = 0;
+    for (const s of starts) {
+      const e = s + (fdpEnd - fdpStart);
+      const ovlStart = Math.max(s, wStart);
+      const ovlEnd = Math.min(e, wEnd);
+      if (ovlEnd > ovlStart) maxOvl = Math.max(maxOvl, ovlEnd - ovlStart);
+    }
+    return maxOvl;
+  }
+
+  function calcWOCLReduction(fdpStart: number, fdpEnd: number): number {
+    const overlap = calcWOCLOverlap(fdpStart, fdpEnd);
+    if (overlap <= 0) return 0;
+    if (fdpStart >= 2 && fdpStart <= 5 + 59/60) return Math.min(overlap, 2);
+    return Math.min(overlap * 0.5, 2);
+  }
+
+  function getSubQMaxFDP(): number {
+    let base = 13.0;
+    if (numSectors > 2) base -= Math.min((numSectors - 2) * 0.5, 2);
+    const woclRed = calcWOCLReduction(reportHour, reportHour + base);
+    base -= woclRed;
+    if (extension) {
+      const woclOvl = calcWOCLOverlap(reportHour, reportHour + base + 1);
+      let maxSec = 6;
+      if (woclOvl > 0 && woclOvl <= 2) maxSec = 4;
+      else if (woclOvl > 2) maxSec = 2;
+      if (numSectors <= maxSec) {
+        base += 1;
+        if (reportHour >= 22 || reportHour < 5) base = Math.min(base, 11.75);
+      }
+    }
+    return base;
+  }
+
+  const fmtTime = (h: number) => {
+    let t = h; while (t < 0) t += 24;
+    const hrs = Math.floor(t) % 24;
+    const mins = Math.round((t - Math.floor(t)) * 60) % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(Math.abs(mins)).padStart(2, '0')}`;
+  };
+  const fmtDur = (h: number) => {
+    const hrs = Math.floor(h);
+    const mins = Math.round((h - hrs) * 60);
+    return `${hrs}h${String(mins).padStart(2, '0')}`;
+  };
+
+  let maxFDP = 0, maxDuty = 0, minRest = 0;
 
   if (regulation === 'oro') {
     maxFDP = getOroMaxFDP(reportHour, numSectors);
-    if (extension && numSectors <= 2) maxFDP += 1; // Commander extension up to 1h
-    maxDuty = maxFDP + 1; // +1h for post-flight duties
-    minRest = Math.max(12, maxDuty); // ORO.FTL.235: at least preceding duty or 12h
-    const offBlockH = reportHour + maxFDP;
-    latestOffBlock = `${String(Math.floor(offBlockH) % 24).padStart(2, '0')}:${String(Math.round((offBlockH % 1) * 60)).padStart(2, '0')}`;
-    const nextH = reportHour + maxDuty + minRest;
-    earliestNext = `${String(Math.floor(nextH) % 24).padStart(2, '0')}:${String(Math.round((nextH % 1) * 60)).padStart(2, '0')}`;
-  } else if (regulation === 'subq') {
-    // Subpart Q simplified
-    maxFDP = 13 - Math.max(0, (numSectors - 1) * 0.5);
-    maxFDP = Math.max(maxFDP, 9);
-    maxDuty = maxFDP + 1;
-    minRest = Math.max(12, maxDuty);
-    const offBlockH = reportHour + maxFDP;
-    latestOffBlock = `${String(Math.floor(offBlockH) % 24).padStart(2, '0')}:${String(Math.round((offBlockH % 1) * 60)).padStart(2, '0')}`;
-    const nextH = reportHour + maxDuty + minRest;
-    earliestNext = `${String(Math.floor(nextH) % 24).padStart(2, '0')}:${String(Math.round((nextH % 1) * 60)).padStart(2, '0')}`;
-  } else {
-    // Part 135: 14 CFR 135.267
-    maxFDP = numSectors <= 6 ? 14 : 10; // Simplified
+    if (!acclimatized) maxFDP = Math.max(maxFDP - 2, 9);
+    if (extension && acclimatized) maxFDP += 1;
     maxDuty = maxFDP;
-    minRest = restHours >= 9 ? 10 : 11; // Consecutive rest
-    const offBlockH = reportHour + maxFDP;
-    latestOffBlock = `${String(Math.floor(offBlockH) % 24).padStart(2, '0')}:${String(Math.round((offBlockH % 1) * 60)).padStart(2, '0')}`;
-    const nextH = reportHour + maxDuty + minRest;
-    earliestNext = `${String(Math.floor(nextH) % 24).padStart(2, '0')}:${String(Math.round((nextH % 1) * 60)).padStart(2, '0')}`;
+    minRest = 12;
+  } else if (regulation === 'subq') {
+    maxFDP = getSubQMaxFDP();
+    maxDuty = maxFDP;
+    const lastDutyVal = parseFloat(lastDuty) || 10;
+    const minBase = homeBase ? 12 : 10;
+    minRest = Math.max(minBase, lastDutyVal);
+    if (extension) minRest += 2;
+  } else {
+    maxFDP = 14;
+    maxDuty = 14;
+    minRest = 10;
   }
 
+  const cmdExtra = (regulation === 'subq' && cmdDiscretion) ? (augmented ? 3 : 2) : 0;
+  // minRest is for pre-duty check (based on last DP)
+  // minRestAfter is for next report (based on current duty)
+  const minRestAfter = regulation === 'subq' ? Math.max(homeBase ? 12 : 10, maxDuty) : minRest;
+  const latestOnBlock = fmtTime(reportHour + maxFDP);
+  const earliestNext = fmtTime(reportHour + maxDuty + minRestAfter);
+  const lastDutyVal = parseFloat(lastDuty) || 10;
+  const lastRestVal = parseFloat(lastRest) || 12;
+  const restSufficient = regulation !== 'subq' || lastRestVal >= minRest;
+
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-lg">
       <h2 className="text-lg font-bold mb-4">Duty / FTL Calculator</h2>
-      {/* Regulation selector */}
       <div className="flex gap-1 mb-4">
         <button onClick={() => setRegulation('oro')} className={`flex-1 py-1.5 text-xs rounded-lg ${regulation === 'oro' ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>ORO.FTL (EASA)</button>
         <button onClick={() => setRegulation('subq')} className={`flex-1 py-1.5 text-xs rounded-lg ${regulation === 'subq' ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>Subpart Q</button>
         <button onClick={() => setRegulation('part135')} className={`flex-1 py-1.5 text-xs rounded-lg ${regulation === 'part135' ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>Part 135</button>
       </div>
-      <InputRow label="Report Time (UTC)" value={reportTime} onChange={setReportTime} unit="hh" placeholder="6" />
-      <InputRow label="Sectors" value={sectors} onChange={setSectors} unit="" placeholder="1" />
-      {regulation !== 'part135' && (
-        <InputRow label="Prior Rest" value={priorRest} onChange={setPriorRest} unit="h" placeholder="12" />
-      )}
-      {/* Toggles */}
-      <div className="flex items-center justify-between py-2">
-        <span className="text-sm text-gray-700">Acclimatized</span>
-        <button onClick={() => setAcclimatized(!acclimatized)}
-          className={`w-10 h-5 rounded-full transition-colors ${acclimatized ? 'bg-green-500' : 'bg-gray-300'}`}>
-          <div className={`w-4 h-4 bg-white rounded-full transition-transform ml-0.5 ${acclimatized ? 'translate-x-5' : ''}`} />
-        </button>
-      </div>
+
+      <InputRow label="Report Time" value={reportTime} onChange={setReportTime} unit={regulation === 'oro' ? 'local' : 'UTC'} placeholder="6" />
+      <InputRow label="Sectors" value={sectors} onChange={setSectors} unit="" placeholder="2" />
+
+      {/* ORO.FTL options */}
       {regulation === 'oro' && (
-        <div className="flex items-center justify-between py-2">
-          <span className="text-sm text-gray-700">Commander Extension</span>
-          <button onClick={() => setExtension(!extension)}
-            className={`w-10 h-5 rounded-full transition-colors ${extension ? 'bg-green-500' : 'bg-gray-300'}`}>
-            <div className={`w-4 h-4 bg-white rounded-full transition-transform ml-0.5 ${extension ? 'translate-x-5' : ''}`} />
-          </button>
+        <>
+          <Toggle label="Acclimatized" value={acclimatized} onChange={setAcclimatized} />
+          <Toggle label="Commander Extension (+1h)" value={extension} onChange={setExtension} />
+        </>
+      )}
+
+      {/* Subpart Q options */}
+      {regulation === 'subq' && (
+        <>
+          <InputRow label="Last Duty Period" value={lastDuty} onChange={setLastDuty} unit="h" placeholder="10" />
+          <InputRow label="Last Rest Taken" value={lastRest} onChange={setLastRest} unit="h" placeholder="12" />
+          <Toggle label="Home Base Rest" value={homeBase} onChange={setHomeBase} />
+          <Toggle label="Operator Extension (+1h)" value={extension} onChange={setExtension} />
+          <Toggle label="Augmented Crew" value={augmented} onChange={setAugmented} />
+          <Toggle label="Commander Discretion" value={cmdDiscretion} onChange={setCmdDiscretion} />
+        </>
+      )}
+
+      {/* Part 135 options */}
+      {regulation === 'part135' && (
+        <div className="flex gap-2 my-2">
+          <button onClick={() => setCrewType(0)} className={`flex-1 py-1.5 text-sm rounded-lg ${crewType === 0 ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>1 Pilot</button>
+          <button onClick={() => setCrewType(1)} className={`flex-1 py-1.5 text-sm rounded-lg ${crewType === 1 ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>2 Pilots</button>
         </div>
       )}
+
+      {/* WOCL info for Subpart Q */}
+      {regulation === 'subq' && (() => {
+        const wocl = calcWOCLOverlap(reportHour, reportHour + maxFDP);
+        return wocl > 0 ? (
+          <div className="mt-2 p-2 bg-indigo-50 rounded-lg flex items-center gap-2">
+            <span className="text-indigo-500 text-sm">🌙</span>
+            <span className="text-xs text-indigo-600">WOCL encroachment: {wocl.toFixed(1)}h (02:00–05:59)</span>
+          </div>
+        ) : null;
+      })()}
+
       <hr className="my-3" />
-      <ResultRow label="Max FDP" value={`${maxFDP.toFixed(1)} h`} bold />
-      <ResultRow label="Latest Off-Block" value={latestOffBlock} bold color="text-orange-600" />
-      <ResultRow label="Max Duty Period" value={`${maxDuty.toFixed(1)} h`} />
-      <ResultRow label="Min Rest Required" value={`${minRest.toFixed(1)} h`} />
-      <ResultRow label="Earliest Next Report" value={earliestNext} color="text-blue-600" />
+
+      {/* Results */}
+      <ResultRow label="Max FDP" value={fmtDur(maxFDP)} bold />
+      <ResultRow label="Latest On-Block" value={latestOnBlock} bold color="text-orange-600" />
+      {regulation === 'part135' && (
+        <ResultRow label="Max Flight Time" value={fmtDur(crewType === 0 ? 8 : 10)} bold color="text-purple-600" />
+      )}
+
+      {/* Extension warnings */}
+      {extension && regulation === 'oro' && (
+        <p className="text-xs text-orange-500 py-1">⚠️ Commander extension +1h (ORO.FTL.205(e))</p>
+      )}
+      {extension && regulation === 'subq' && (
+        <p className="text-xs text-blue-500 py-1">ℹ️ Operator extension +1h (max 2×/7 days)</p>
+      )}
+
+      {/* Commander Discretion (Subpart Q) */}
+      {cmdDiscretion && regulation === 'subq' && (
+        <>
+          <hr className="my-2" />
+          <ResultRow label="Commander Discretion" value={`+${fmtDur(cmdExtra)}`} color="text-red-600" />
+          <ResultRow label="Max FDP (with discretion)" value={fmtDur(maxFDP + cmdExtra)} bold color="text-red-600" />
+          <ResultRow label="Latest On-Block (discr.)" value={fmtTime(reportHour + maxFDP + cmdExtra)} bold color="text-red-600" />
+          <p className="text-xs text-red-500 py-1">⚠️ Unforeseen circumstances only. Report required within 28 days.</p>
+        </>
+      )}
+
+      <hr className="my-3" />
+      <ResultRow label="Max Duty Period" value={fmtDur(maxDuty)} />
+      <ResultRow label={regulation === 'subq' ? 'Min Rest After This Duty' : 'Min Rest Required'} value={fmtDur(regulation === 'subq' ? minRestAfter : minRest)} bold color="text-blue-600" />
+      <ResultRow label="Earliest Next Report" value={earliestNext} bold color="text-green-600" />
+
+      {/* Pre-duty rest check (Subpart Q) */}
+      {regulation === 'subq' && (
+        <div className="mt-3 mb-1">
+          <p className="text-xs font-medium text-gray-500 mb-2">Pre-Duty Rest Check</p>
+          <div className="space-y-1 mb-2">
+            <ResultRow label="Last Duty Period" value={fmtDur(lastDutyVal)} />
+            <ResultRow label="Min Rest Required" value={fmtDur(minRest)} bold color="text-blue-600" />
+            <ResultRow label="Last Rest Taken" value={fmtDur(lastRestVal)} bold color={restSufficient ? 'text-green-600' : 'text-red-600'} />
+          </div>
+          <div className={`flex items-center gap-2 py-2 px-3 rounded-lg ${restSufficient ? 'bg-green-50' : 'bg-red-50'}`}>
+            <span className="text-lg">{restSufficient ? '✅' : '⛔'}</span>
+            <div>
+              <p className={`text-sm font-bold ${restSufficient ? 'text-green-700' : 'text-red-700'}`}>
+                {restSufficient ? 'REST COMPLIANT' : 'INSUFFICIENT REST'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {restSufficient
+                  ? `You may commence duty at ${fmtTime(reportHour)}`
+                  : `Required: ${fmtDur(minRest)}, taken: ${fmtDur(lastRestVal)}. Shortfall: ${fmtDur(minRest - lastRestVal)}`}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {homeBase ? `Home base: rest ≥ max(${fmtDur(lastDutyVal)} last DP, 12h) = ${fmtDur(minRest)}` : `Away: rest ≥ max(${fmtDur(lastDutyVal)} last DP, 10h) = ${fmtDur(minRest)}`}
+            {extension ? ' — Extension penalty: +2h included' : ''}
+          </p>
+        </div>
+      )}
+
+      {/* Cumulative Limits */}
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <p className="text-xs text-gray-500 font-medium mb-2">Cumulative Limits</p>
+        {regulation === 'oro' && (
+          <div className="space-y-1 text-xs text-gray-400">
+            <p>Block: 100h/28 days · 900h/12 months</p>
+            <p>Duty: 110h/14 days · Extensions: max 2×/7 days</p>
+            <p>Days off: min 7/28 days</p>
+          </div>
+        )}
+        {regulation === 'subq' && (
+          <div className="space-y-1 text-xs text-gray-400">
+            <p>Duty: 60h/7 days · 190h/28 days</p>
+            <p>Block: 100h/28 days · 900h/year</p>
+            <p>Extensions: max 2×/7 days</p>
+            <p>Weekly rest: 36h incl. 2 local nights (max 168h gap)</p>
+            <p>Meal required if FDP {'>'} 6h</p>
+          </div>
+        )}
+        {regulation === 'part135' && (
+          <div className="space-y-1 text-xs text-gray-400">
+            <p>Flight: {crewType === 0 ? '8h' : '10h'}/24h · Duty: 14h/24h</p>
+            <p>Rest: 10h consecutive/24h · Off: 24h/7 days</p>
+          </div>
+        )}
+      </div>
 
       {/* Reference */}
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
         <p className="text-xs text-gray-500 font-medium mb-1">Reference</p>
         <p className="text-xs text-gray-400">
-          {regulation === 'oro' && 'EU 965/2012 ORO.FTL.205 — Max FDP by reporting time window with sector reductions. Extension per ORO.FTL.205(e).'}
-          {regulation === 'subq' && 'EU-OPS 1, Subpart Q — Flight time limitations for commercial air transport (legacy regulation).'}
-          {regulation === 'part135' && '14 CFR 135.267 — Flight time limitations and rest requirements for Part 135 operations.'}
+          {regulation === 'oro' && 'EU 965/2012 ORO.FTL.205 — Table 2: Max FDP by window (4) and sectors (1–10+). Commander extension: +1h unforeseen. Rest: min 12h (ORO.FTL.235).'}
+          {regulation === 'subq' && 'EU-OPS Subpart Q (Reg. 1899/2006) — 13h base FDP, -30min/sector beyond 2 (max -2h). WOCL reduction (02:00–05:59). Operator +1h, Commander +2h/+3h augmented. Rest: home max(12h, duty), away max(10h, duty).'}
+          {regulation === 'part135' && '14 CFR 135.267 — Max 14h duty, 8h flight (1 pilot) / 10h (2 pilots). Min 10h consecutive rest. 24h off per 7 days.'}
         </p>
       </div>
     </div>

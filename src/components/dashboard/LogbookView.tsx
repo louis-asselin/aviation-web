@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logbooksApi, LogbookEntry, UserAircraft } from '@/lib/api';
 import {
   Plus, ChevronRight, ArrowLeft, Trash2, Edit3, Plane, Save, X,
-  Download, ChevronLeft, ChevronsLeft, ChevronsRight
+  Download, ChevronLeft, ChevronsLeft, ChevronsRight, Lock, Star
 } from 'lucide-react';
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -72,9 +72,14 @@ export default function LogbookView() {
   const [form, setForm] = useState<FormData>({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showPaywall, setShowPaywall] = useState(false);
   const limit = 25;
 
   const userName = user ? `${user.firstName} ${user.lastName}` : '';
+  const isPremium = (user as any)?.subscriptionTier === 'premium' || (user as any)?.role === 'admin' || (user as any)?.role === 'orgAdmin';
+  const FREE_ENTRY_LIMIT = 10;
+  const canAddEntry = isPremium || total < FREE_ENTRY_LIMIT;
+  const remainingFree = Math.max(0, FREE_ENTRY_LIMIT - total);
 
   const [debugMsg, setDebugMsg] = useState('');
 
@@ -148,6 +153,7 @@ export default function LogbookView() {
   const isPicUser = (form.picName as string || '').toLowerCase().trim() === userName.toLowerCase().trim();
 
   const openNewFlight = () => {
+    if (!canAddEntry) { setShowPaywall(true); return; }
     setEditingId(null);
     setForm({ ...EMPTY_FORM, picName: userName });
     setShowForm(true);
@@ -155,6 +161,7 @@ export default function LogbookView() {
   };
 
   const openNextLeg = () => {
+    if (!canAddEntry) { setShowPaywall(true); return; }
     const last = entries[0]; // most recent
     setEditingId(null);
     setForm({
@@ -526,36 +533,104 @@ export default function LogbookView() {
 
   return (
     <div className="p-6">
+      {/* Paywall Modal */}
+      {showPaywall && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+              <h3 className="text-lg font-bold">Premium Feature</h3>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">
+              You&apos;ve reached the free logbook limit (10 entries). Upgrade to Premium for unlimited flight logging, PDF export, and Maps & Stats.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaywall(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowPaywall(false); }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Free tier banner */}
+      {!isPremium && (
+        <div className={`mb-4 p-3 rounded-lg flex items-center gap-3 ${canAddEntry ? 'bg-blue-50' : 'bg-orange-50'}`}>
+          <div className={`text-lg ${canAddEntry ? 'text-blue-500' : 'text-orange-500'}`}>
+            {canAddEntry ? 'ℹ️' : '⚠️'}
+          </div>
+          <div className="flex-1">
+            {canAddEntry ? (
+              <>
+                <p className="text-sm font-semibold text-gray-800">{remainingFree} free entries remaining</p>
+                <p className="text-xs text-gray-500">Upgrade to Premium for unlimited entries + Maps & Stats</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-orange-700">Free logbook limit reached (10 entries)</p>
+                <p className="text-xs text-gray-500">Upgrade to Premium to continue logging flights</p>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => setShowPaywall(true)}
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Upgrade
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Flight Logbook</h2>
         <div className="flex gap-2">
-          <select
-            id="exportPeriod"
-            defaultValue="all"
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700"
-          >
-            {exportPeriods.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
-          <button onClick={() => {
-            const sel = (document.getElementById('exportPeriod') as HTMLSelectElement)?.value || 'all';
-            handleExport(sel);
-          }}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50">
-            <Download className="w-4 h-4" /> {isExporting ? 'Exporting...' : 'Export PDF'}
-          </button>
+          {isPremium && (
+            <>
+              <select
+                id="exportPeriod"
+                defaultValue="all"
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700"
+              >
+                {exportPeriods.map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+              <button onClick={() => {
+                const sel = (document.getElementById('exportPeriod') as HTMLSelectElement)?.value || 'all';
+                handleExport(sel);
+              }}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50">
+                <Download className="w-4 h-4" /> {isExporting ? 'Exporting...' : 'Export PDF'}
+              </button>
+            </>
+          )}
+          {!isPremium && (
+            <button onClick={() => setShowPaywall(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed opacity-60">
+              <Lock className="w-3 h-3" /> <Download className="w-4 h-4" /> Export PDF
+            </button>
+          )}
           {entries.length > 0 && (
             <button onClick={openNextLeg}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+              className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg ${canAddEntry ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-200 text-gray-500 opacity-60'}`}>
               <ChevronRight className="w-4 h-4" /> Next Leg
             </button>
           )}
           <button onClick={openNewFlight}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg ${canAddEntry ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500'}`}>
             <Plus className="w-4 h-4" /> New Flight
+            {!canAddEntry && <Lock className="w-3 h-3" />}
           </button>
         </div>
       </div>
