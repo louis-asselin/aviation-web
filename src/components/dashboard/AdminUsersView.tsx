@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersApi, User } from '@/lib/api';
-import { Users, Search, Shield, ShieldAlert, KeyRound, Mail, Plus, ChevronDown, Star } from 'lucide-react';
+import { Users, Search, Shield, ShieldAlert, KeyRound, Mail, Plus, ChevronDown, Star, Phone, MapPin, Calendar, Building2, GraduationCap, Plane } from 'lucide-react';
 import { getRoleLabel, getRoleColor, formatDate, getInitials } from '@/lib/utils';
 
 export default function AdminUsersView() {
@@ -255,65 +255,115 @@ export default function AdminUsersView() {
       {/* Edit User Modal */}
       {editingUser && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingUser(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5" onClick={e => e.stopPropagation()}>
+            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-accent-500 rounded-full flex items-center justify-center text-white font-semibold">
                 {getInitials(editingUser.firstName, editingUser.lastName)}
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="font-bold text-gray-900">{editingUser.firstName} {editingUser.lastName}</h2>
                 <p className="text-sm text-gray-500">{editingUser.email}</p>
               </div>
+              <div className="flex items-center gap-2">
+                <span className={`badge ${getRoleColor(editingUser.role)}`}>{getRoleLabel(editingUser.role)}</span>
+                {(editingUser as any).subscriptionTier === 'premium' && (
+                  <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                    <Star className="w-3 h-3 fill-yellow-500" /> Premium
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select value={editRole} onChange={e => setEditRole(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  {allowedRoles().map(r => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Personal Information (read-only) */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Personal Information</h3>
 
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">Active</label>
-                <button onClick={() => setEditActive(!editActive)}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${editActive ? 'bg-green-500' : 'bg-gray-300'}`}>
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editActive ? 'translate-x-5' : ''}`} />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Star className={`w-4 h-4 ${editPremium ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`} />
-                  <label className="text-sm font-medium text-gray-700">Premium Access</label>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={editingUser.email} />
+                  <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={(editingUser as any).phone || '—'} />
+                  <InfoRow icon={<Calendar className="w-4 h-4" />} label="Date of Birth" value={(editingUser as any).dateOfBirth ? formatDate((editingUser as any).dateOfBirth) : '—'} />
+                  <InfoRow icon={<MapPin className="w-4 h-4" />} label="Address" value={
+                    [(editingUser as any).address, (editingUser as any).zipCode, (editingUser as any).city, (editingUser as any).country].filter(Boolean).join(', ') || '—'
+                  } />
+                  <InfoRow icon={<Plane className="w-4 h-4" />} label="Airline" value={(editingUser as any).airline || '—'} />
+                  <InfoRow icon={<GraduationCap className="w-4 h-4" />} label="ATO" value={(editingUser as any).ato || '—'} />
                 </div>
-                <button onClick={() => setEditPremium(!editPremium)}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${editPremium ? 'bg-yellow-500' : 'bg-gray-300'}`}>
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editPremium ? 'translate-x-5' : ''}`} />
-                </button>
+
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <InfoRow icon={<Calendar className="w-4 h-4" />} label="Member since" value={editingUser.createdAt ? formatDate(editingUser.createdAt) : '—'} />
+                  <InfoRow icon={<Shield className="w-4 h-4" />} label="Terms accepted" value={editingUser.acceptedTermsAt ? formatDate(editingUser.acceptedTermsAt) : 'No'} />
+                  <InfoRow icon={<KeyRound className="w-4 h-4" />} label="Must change password" value={editingUser.mustChangePassword ? 'Yes' : 'No'} />
+                </div>
               </div>
-            </div>
 
-            {saveMsg && (
-              <p className={`text-sm ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
-            )}
+              {/* Right: Admin controls */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Admin Controls</h3>
 
-            <div className="flex gap-3">
-              <button onClick={saveUser} disabled={saving}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-              <button onClick={() => setEditingUser(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
-                Cancel
-              </button>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      {allowedRoles().map(r => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <label className="text-sm font-medium text-gray-700">Active</label>
+                    <button onClick={() => setEditActive(!editActive)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${editActive ? 'bg-green-500' : 'bg-gray-300'}`}>
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editActive ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Star className={`w-4 h-4 ${editPremium ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`} />
+                      <label className="text-sm font-medium text-gray-700">Premium Access</label>
+                    </div>
+                    <button onClick={() => setEditPremium(!editPremium)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${editPremium ? 'bg-yellow-500' : 'bg-gray-300'}`}>
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editPremium ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {saveMsg && (
+                  <p className={`text-sm ${saveMsg.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>{saveMsg}</p>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={saveUser} disabled={saving}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button onClick={() => setEditingUser(null)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="text-gray-400 mt-0.5 flex-shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm text-gray-900 break-words">{value}</p>
+      </div>
     </div>
   );
 }
