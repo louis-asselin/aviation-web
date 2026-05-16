@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersApi, User } from '@/lib/api';
-import { Users, Search, Shield, ShieldAlert, KeyRound, Mail, Plus, ChevronDown } from 'lucide-react';
+import { Users, Search, Shield, ShieldAlert, KeyRound, Mail, Plus, ChevronDown, Star } from 'lucide-react';
 import { getRoleLabel, getRoleColor, formatDate, getInitials } from '@/lib/utils';
 
 export default function AdminUsersView() {
@@ -16,6 +16,7 @@ export default function AdminUsersView() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editRole, setEditRole] = useState('');
   const [editActive, setEditActive] = useState(true);
+  const [editPremium, setEditPremium] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -62,6 +63,7 @@ export default function AdminUsersView() {
     setEditingUser(u);
     setEditRole(u.role);
     setEditActive(u.isActive !== false);
+    setEditPremium((u as any).subscriptionTier === 'premium');
     setSaveMsg('');
   };
 
@@ -70,10 +72,26 @@ export default function AdminUsersView() {
     setSaving(true);
     setSaveMsg('');
     try {
+      // Update role & active status
       await usersApi.update(editingUser.id as number, {
         role: editRole,
         isActive: editActive,
       } as Partial<User>, token);
+
+      // Update subscription tier
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      await fetch(`${API_URL}/subscriptions/admin/${editingUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tier: editPremium ? 'premium' : 'basic',
+          expiresAt: editPremium ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null,
+        }),
+      });
+
       setSaveMsg('Saved!');
       loadUsers();
       setTimeout(() => setEditingUser(null), 800);
@@ -209,8 +227,16 @@ export default function AdminUsersView() {
                     {u.createdAt ? formatDate(u.createdAt) : '—'}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`w-2 h-2 rounded-full inline-block ${u.isActive !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="text-xs text-gray-500 ml-2">{u.isActive !== false ? 'Active' : 'Inactive'}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full inline-block ${u.isActive !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="text-xs text-gray-500">{u.isActive !== false ? 'Active' : 'Inactive'}</span>
+                      {(u as any).subscriptionTier === 'premium' && (
+                        <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded">
+                          <Star className="w-3 h-3 fill-yellow-500" />
+                          Premium
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -256,6 +282,17 @@ export default function AdminUsersView() {
                 <button onClick={() => setEditActive(!editActive)}
                   className={`relative w-11 h-6 rounded-full transition-colors ${editActive ? 'bg-green-500' : 'bg-gray-300'}`}>
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editActive ? 'translate-x-5' : ''}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className={`w-4 h-4 ${editPremium ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'}`} />
+                  <label className="text-sm font-medium text-gray-700">Premium Access</label>
+                </div>
+                <button onClick={() => setEditPremium(!editPremium)}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${editPremium ? 'bg-yellow-500' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${editPremium ? 'translate-x-5' : ''}`} />
                 </button>
               </div>
             </div>

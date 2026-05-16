@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authApi } from '@/lib/api';
-import { User, Mail, Phone, MapPin, Calendar, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Save, CheckCircle2, AlertCircle, Building2, GraduationCap, Calendar } from 'lucide-react';
 import { getRoleLabel, formatDate, getInitials } from '@/lib/utils';
 
 export default function ProfileView() {
@@ -15,7 +15,11 @@ export default function ProfileView() {
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
+    dateOfBirth: (user as any)?.dateOfBirth || '',
     phone: user?.phone || '',
+    email: user?.email || '',
+    airline: (user as any)?.airline || '',
+    ato: (user as any)?.ato || '',
     address: user?.address || '',
     city: user?.city || '',
     zipCode: user?.zipCode || '',
@@ -39,6 +43,8 @@ export default function ProfileView() {
     }
   };
 
+  const isPremium = (user as any)?.subscriptionTier === 'premium' || (user as any)?.role === 'admin' || (user as any)?.role === 'org_admin';
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Profile header */}
@@ -50,7 +56,12 @@ export default function ProfileView() {
           <div>
             <h1 className="text-xl font-bold text-gray-900">{user?.firstName} {user?.lastName}</h1>
             <p className="text-gray-500">{user?.email}</p>
-            <span className="badge bg-accent-100 text-accent-700 mt-1">{getRoleLabel(user?.role || '')}</span>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="badge bg-accent-100 text-accent-700">{getRoleLabel(user?.role || '')}</span>
+              <span className={`badge ${isPremium ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                {isPremium ? '★ Premium' : 'Basic'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -64,7 +75,7 @@ export default function ProfileView() {
         </div>
       )}
 
-      {/* Profile details */}
+      {/* Personal Information */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
@@ -84,18 +95,7 @@ export default function ProfileView() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">First Name</label>
-            {isEditing ? (
-              <input
-                value={form.firstName}
-                onChange={(e) => setForm(f => ({ ...f, firstName: e.target.value }))}
-                className="input-field"
-              />
-            ) : (
-              <p className="text-gray-900">{user?.firstName || '—'}</p>
-            )}
-          </div>
+          {/* Last Name */}
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-1">Last Name</label>
             {isEditing ? (
@@ -108,13 +108,58 @@ export default function ProfileView() {
               <p className="text-gray-900">{user?.lastName || '—'}</p>
             )}
           </div>
+
+          {/* First Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">First Name</label>
+            {isEditing ? (
+              <input
+                value={form.firstName}
+                onChange={(e) => setForm(f => ({ ...f, firstName: e.target.value }))}
+                className="input-field"
+              />
+            ) : (
+              <p className="text-gray-900">{user?.firstName || '—'}</p>
+            )}
+          </div>
+
+          {/* Date of Birth */}
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">Date of Birth</label>
+            {isEditing ? (
+              <input
+                type="date"
+                value={form.dateOfBirth ? form.dateOfBirth.substring(0, 10) : ''}
+                onChange={(e) => setForm(f => ({ ...f, dateOfBirth: e.target.value }))}
+                className="input-field"
+              />
+            ) : (
+              <p className="text-gray-900 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                {(user as any)?.dateOfBirth ? formatDate((user as any).dateOfBirth) : '—'}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
-            <p className="text-gray-900 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-gray-400" />
-              {user?.email || '—'}
-            </p>
+            {isEditing ? (
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                className="input-field"
+              />
+            ) : (
+              <p className="text-gray-900 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-400" />
+                {user?.email || '—'}
+              </p>
+            )}
           </div>
+
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-1">Phone</label>
             {isEditing ? (
@@ -131,6 +176,48 @@ export default function ProfileView() {
               </p>
             )}
           </div>
+
+          {/* Airline (optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Airline <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            {isEditing ? (
+              <input
+                value={form.airline}
+                onChange={(e) => setForm(f => ({ ...f, airline: e.target.value }))}
+                className="input-field"
+                placeholder="e.g. Air France"
+              />
+            ) : (
+              <p className="text-gray-900 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-gray-400" />
+                {(user as any)?.airline || '—'}
+              </p>
+            )}
+          </div>
+
+          {/* ATO (optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              ATO <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            {isEditing ? (
+              <input
+                value={form.ato}
+                onChange={(e) => setForm(f => ({ ...f, ato: e.target.value }))}
+                className="input-field"
+                placeholder="e.g. ESMA Aviation Academy"
+              />
+            ) : (
+              <p className="text-gray-900 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-gray-400" />
+                {(user as any)?.ato || '—'}
+              </p>
+            )}
+          </div>
+
+          {/* Address - full width */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-500 mb-1">Address</label>
             {isEditing ? (
@@ -143,7 +230,7 @@ export default function ProfileView() {
             ) : (
               <p className="text-gray-900 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-gray-400" />
-                {[user?.address, user?.city, user?.zipCode, user?.country].filter(Boolean).join(', ') || '—'}
+                {[user?.address, user?.zipCode, user?.city, user?.country].filter(Boolean).join(', ') || '—'}
               </p>
             )}
           </div>
@@ -187,18 +274,20 @@ export default function ProfileView() {
             <span className="font-medium">{getRoleLabel(user?.role || '')}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-gray-500">Subscription</span>
+            <span className={`font-medium ${isPremium ? 'text-yellow-600' : 'text-gray-600'}`}>
+              {isPremium ? '★ Premium' : 'Basic'}
+            </span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100">
             <span className="text-gray-500">Member since</span>
             <span className="font-medium">{user?.createdAt ? formatDate(user.createdAt) : '—'}</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
+          <div className="flex justify-between py-2">
             <span className="text-gray-500">Terms accepted</span>
             <span className={`font-medium ${user?.acceptedTermsAt ? 'text-green-600' : 'text-orange-500'}`}>
               {user?.acceptedTermsAt ? formatDate(user.acceptedTermsAt) : 'Pending'}
             </span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-500">Date of birth</span>
-            <span className="font-medium">{user?.dateOfBirth ? formatDate(user.dateOfBirth) : '—'}</span>
           </div>
         </div>
       </div>

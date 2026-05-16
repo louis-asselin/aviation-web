@@ -143,15 +143,15 @@ function WindCalc() {
   const s = parseFloat(spd) || 0;
   const hw = s * Math.cos(d - r), xw = s * Math.sin(d - r);
 
-  // SVG diagram
-  const cx = 150, cy = 150, radius = 100;
+  // SVG diagram — using viewBox for responsive scaling
+  const cx = 250, cy = 250, radius = 180;
   const rwyAngle = (parseFloat(rwy) || 0);
   const windAngle = (parseFloat(dir) || 0);
   const rwyRad = (rwyAngle - 90) * Math.PI / 180;
   const windRad = (windAngle - 90) * Math.PI / 180;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-lg">
+    <div className="bg-white rounded-xl border p-6 max-w-3xl">
       <h2 className="text-lg font-bold mb-4">Wind Component</h2>
       <InputRow label="Runway QFU" value={rwy} onChange={setRwy} unit="°" />
       <InputRow label="Wind Direction" value={dir} onChange={setDir} unit="°" />
@@ -162,26 +162,26 @@ function WindCalc() {
 
       {/* Interactive Diagram */}
       <div className="mt-4 flex justify-center">
-        <svg width="300" height="300" viewBox="0 0 300 300" className="border rounded-lg bg-gray-50">
+        <svg viewBox="0 0 500 500" className="border rounded-lg bg-gray-50 w-full max-w-[500px] h-auto">
           {/* Compass */}
           <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#d1d5db" strokeWidth="1" />
-          <text x={cx} y={cy - radius - 8} textAnchor="middle" className="text-xs" fill="#6b7280" fontSize="10">N</text>
-          <text x={cx + radius + 10} y={cy + 4} textAnchor="middle" className="text-xs" fill="#6b7280" fontSize="10">E</text>
-          <text x={cx} y={cy + radius + 16} textAnchor="middle" className="text-xs" fill="#6b7280" fontSize="10">S</text>
-          <text x={cx - radius - 10} y={cy + 4} textAnchor="middle" className="text-xs" fill="#6b7280" fontSize="10">W</text>
+          <text x={cx} y={cx - radius - 12} textAnchor="middle" fill="#6b7280" fontSize="14" fontWeight="bold">N</text>
+          <text x={cx + radius + 14} y={cy + 5} textAnchor="middle" fill="#6b7280" fontSize="14" fontWeight="bold">E</text>
+          <text x={cx} y={cy + radius + 22} textAnchor="middle" fill="#6b7280" fontSize="14" fontWeight="bold">S</text>
+          <text x={cx - radius - 14} y={cy + 5} textAnchor="middle" fill="#6b7280" fontSize="14" fontWeight="bold">W</text>
 
           {/* Runway */}
           <line
-            x1={cx - 60 * Math.cos(rwyRad)} y1={cy - 60 * Math.sin(rwyRad)}
-            x2={cx + 60 * Math.cos(rwyRad)} y2={cy + 60 * Math.sin(rwyRad)}
-            stroke="#374151" strokeWidth="6" strokeLinecap="round"
+            x1={cx - 100 * Math.cos(rwyRad)} y1={cy - 100 * Math.sin(rwyRad)}
+            x2={cx + 100 * Math.cos(rwyRad)} y2={cy + 100 * Math.sin(rwyRad)}
+            stroke="#374151" strokeWidth="8" strokeLinecap="round"
           />
           {/* Runway direction marker */}
-          <circle cx={cx + 50 * Math.cos(rwyRad)} cy={cy + 50 * Math.sin(rwyRad)} r="4" fill="#10b981" />
+          <circle cx={cx + 85 * Math.cos(rwyRad)} cy={cy + 85 * Math.sin(rwyRad)} r="6" fill="#10b981" />
 
           {/* Aircraft symbol at center */}
           <polygon
-            points={`${cx},${cy - 8} ${cx - 4},${cy + 4} ${cx},${cy + 2} ${cx + 4},${cy + 4}`}
+            points={`${cx},${cy - 14} ${cx - 7},${cy + 7} ${cx},${cy + 3} ${cx + 7},${cy + 7}`}
             fill="#1f2937"
             transform={`rotate(${rwyAngle}, ${cx}, ${cy})`}
           />
@@ -190,9 +190,9 @@ function WindCalc() {
           {s > 0 && (
             <>
               <line
-                x1={cx + 80 * Math.cos(windRad)} y1={cy + 80 * Math.sin(windRad)}
+                x1={cx + 140 * Math.cos(windRad)} y1={cy + 140 * Math.sin(windRad)}
                 x2={cx} y2={cy}
-                stroke="#ef4444" strokeWidth="2" markerEnd="url(#arrowRed)"
+                stroke="#ef4444" strokeWidth="3" markerEnd="url(#arrowRed)"
               />
               <defs>
                 <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
@@ -206,8 +206,8 @@ function WindCalc() {
           {s > 0 && Math.abs(hw) > 0.5 && (
             <line
               x1={cx} y1={cy}
-              x2={cx + (hw / s) * 60 * Math.cos(rwyRad)} y2={cy + (hw / s) * 60 * Math.sin(rwyRad)}
-              stroke="#22c55e" strokeWidth="2" strokeDasharray="4 2"
+              x2={cx + (hw / s) * 100 * Math.cos(rwyRad)} y2={cy + (hw / s) * 100 * Math.sin(rwyRad)}
+              stroke="#22c55e" strokeWidth="3" strokeDasharray="6 3"
             />
           )}
 
@@ -215,18 +215,18 @@ function WindCalc() {
           {s > 0 && Math.abs(xw) > 0.5 && (
             <line
               x1={cx} y1={cy}
-              x2={cx + (xw / s) * 60 * Math.cos(rwyRad + Math.PI / 2)} y2={cy + (xw / s) * 60 * Math.sin(rwyRad + Math.PI / 2)}
-              stroke="#3b82f6" strokeWidth="2" strokeDasharray="4 2"
+              x2={cx + (xw / s) * 100 * Math.cos(rwyRad + Math.PI / 2)} y2={cy + (xw / s) * 100 * Math.sin(rwyRad + Math.PI / 2)}
+              stroke="#3b82f6" strokeWidth="3" strokeDasharray="6 3"
             />
           )}
 
           {/* Legend */}
-          <line x1="10" y1="275" x2="25" y2="275" stroke="#ef4444" strokeWidth="2" />
-          <text x="28" y="278" fill="#6b7280" fontSize="8">Wind</text>
-          <line x1="60" y1="275" x2="75" y2="275" stroke="#22c55e" strokeWidth="2" strokeDasharray="4 2" />
-          <text x="78" y="278" fill="#6b7280" fontSize="8">HW</text>
-          <line x1="100" y1="275" x2="115" y2="275" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4 2" />
-          <text x="118" y="278" fill="#6b7280" fontSize="8">XW</text>
+          <line x1="15" y1="470" x2="35" y2="470" stroke="#ef4444" strokeWidth="3" />
+          <text x="40" y="474" fill="#6b7280" fontSize="13">Wind</text>
+          <line x1="100" y1="470" x2="120" y2="470" stroke="#22c55e" strokeWidth="3" strokeDasharray="6 3" />
+          <text x="125" y="474" fill="#6b7280" fontSize="13">Headwind</text>
+          <line x1="210" y1="470" x2="230" y2="470" stroke="#3b82f6" strokeWidth="3" strokeDasharray="6 3" />
+          <text x="235" y="474" fill="#6b7280" fontSize="13">Crosswind</text>
         </svg>
       </div>
     </div>
@@ -244,7 +244,7 @@ function FuelCalc() {
   const trip = f * t, res = f * (parseFloat(reserve) || 45) / 60, total = trip + res + (parseFloat(taxi) || 0);
   const unit = useGal ? 'USG' : 'L';
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Fuel Calculator</h2>
       <div className="flex gap-2 mb-4">
         <button onClick={() => setUseGal(false)} className={`flex-1 py-1.5 text-sm rounded-lg ${!useGal ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>Litres</button>
@@ -389,7 +389,7 @@ function FTLCalc() {
   const restSufficient = regulation !== 'subq' || lastRestVal >= minRest;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-lg">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Duty / FTL Calculator</h2>
       <div className="flex gap-1 mb-4">
         <button onClick={() => setRegulation('oro')} className={`flex-1 py-1.5 text-xs rounded-lg ${regulation === 'oro' ? 'bg-primary-500 text-white' : 'bg-gray-100'}`}>ORO.FTL (EASA)</button>
@@ -643,7 +643,7 @@ function MetarDecoder() {
   const decoded = decode(raw);
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-lg">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">METAR Decoder</h2>
       <textarea value={raw} onChange={e => setRaw(e.target.value.toUpperCase())}
         placeholder="Paste METAR here (e.g. METAR LFPG 161030Z 32015G25KT 9999 FEW040 12/05 Q1023)"
@@ -680,7 +680,7 @@ function MassBalance() {
   const cg = totalMass > 0 ? totalMoment / totalMass : 0;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-lg">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Mass & Balance</h2>
       <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 text-xs font-medium text-gray-500 mb-2">
         <span>Station</span><span className="text-right">Mass (kg)</span><span className="text-right">Arm (m)</span><span className="text-right">Moment</span>
@@ -720,7 +720,7 @@ function TASCalc() {
   const tas = casVal / Math.sqrt(densityRatio);
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">TAS Calculator</h2>
       <InputRow label="CAS / IAS" value={cas} onChange={setCas} unit="kt" />
       <InputRow label="Pressure Altitude" value={alt} onChange={setAlt} unit="ft" />
@@ -748,7 +748,7 @@ function MachCalc() {
   const tas = machVal * speedOfSound;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Mach Converter</h2>
       <InputRow label="Mach Number" value={mach} onChange={setMach} unit="M" placeholder="0.78" />
       <InputRow label="Altitude" value={alt} onChange={setAlt} unit="ft" />
@@ -778,7 +778,7 @@ function TODCalc() {
   const vs = gsVal > 0 ? (altDiff / todTime) : 0;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Top of Descent</h2>
       <InputRow label="Current FL" value={currentFL} onChange={setCurrentFL} unit="FL" placeholder="350" />
       <InputRow label="Target Altitude" value={targetAlt} onChange={setTargetAlt} unit="ft" placeholder="3000" />
@@ -816,7 +816,7 @@ function E6BCalc() {
   const gsCalc = tasVal * Math.cos(thRad - tcVal) + wsVal * Math.cos(wdVal - tcVal);
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">E6B Wind Triangle</h2>
       <InputRow label="True Course" value={tc} onChange={setTc} unit="°" />
       <InputRow label="TAS" value={tas} onChange={setTas} unit="kt" />
@@ -851,7 +851,7 @@ function EnduranceCalc() {
   };
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Endurance</h2>
       <InputRow label="Fuel Remaining" value={fuel} onChange={setFuel} unit="L" />
       <InputRow label="Fuel Flow" value={flow} onChange={setFlow} unit="L/h" />
@@ -912,7 +912,7 @@ function SunriseSunset() {
   const result = (lat && lon) ? calcSun(latVal, lonVal, date) : null;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Sunrise / Sunset</h2>
       <div className="flex gap-2 mb-4 flex-wrap">
         {presets.map(p => (
@@ -1030,7 +1030,7 @@ function MassCheck() {
   const lwOk = lw <= maxLWVal;
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Mass Check (ZFW / TOW / LW)</h2>
       <InputRow label="DOW (Dry Op. Weight)" value={dow} onChange={setDow} unit="kg" />
       <InputRow label="Payload" value={payload} onChange={setPayload} unit="kg" />
@@ -1077,7 +1077,7 @@ function UnitConv() {
   else result = (parseFloat(val) || 0) * (conversions[conv][1] as number);
 
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Unit Converter</h2>
       <select value={conv} onChange={e => setConv(Number(e.target.value))}
         className="w-full border rounded-lg px-3 py-2 mb-3 text-sm">
@@ -1102,7 +1102,7 @@ function DensityCalc() {
   const isa = 15 - (pa / 1000) * 2;
   const da = pa + 120 * ((parseFloat(temp) || 15) - isa);
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Density Altitude</h2>
       <InputRow label="Elevation" value={elev} onChange={setElev} unit="ft" />
       <InputRow label="Temperature" value={temp} onChange={setTemp} unit="°C" placeholder="15" />
@@ -1126,7 +1126,7 @@ function DistCalc() {
   else if (mode === 1) { result = `${((parseFloat(gs) || 0) * (parseFloat(time) || 0) / 60).toFixed(1)} NM`; }
   else { result = `${((parseFloat(dist) || 0) / ((parseFloat(time) || 1) / 60)).toFixed(0)} kt`; }
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Distance / Time / Speed</h2>
       <div className="flex gap-1 mb-4">
         {['Find Time', 'Find Distance', 'Find Speed'].map((l, i) => (
@@ -1148,7 +1148,7 @@ function PressureCalc() {
   const [hpa, setHpa] = useState('1013.25');
   const v = parseFloat(hpa) || 1013.25;
   return (
-    <div className="bg-white rounded-xl border p-6 max-w-md">
+    <div className="bg-white rounded-xl border p-6 max-w-2xl">
       <h2 className="text-lg font-bold mb-4">Pressure Converter</h2>
       <InputRow label="hPa / mbar" value={hpa} onChange={setHpa} unit="hPa" placeholder="1013.25" />
       <hr className="my-3" />
