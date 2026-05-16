@@ -3,8 +3,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { PageId } from './DashboardLayout';
 import {
-  LayoutDashboard, BookOpen, Users,
-  Building2, BarChart3, Settings, Plane, X, LogOut, ClipboardList, Shield, Bug, BookOpenCheck
+  LayoutDashboard, Users,
+  Settings, X, LogOut, Shield, Bug, BookOpenCheck, Wrench, FolderOpen
 } from 'lucide-react';
 import { getRoleLabel, getInitials } from '@/lib/utils';
 
@@ -22,14 +22,11 @@ interface NavItem {
   roles?: string[];
 }
 
-const adminNavItems: NavItem[] = [
+const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'content', label: 'Content', icon: <BookOpen className="w-5 h-5" />, roles: ['admin', 'org_admin', 'instructor'] },
-  { id: 'courses', label: 'My Courses', icon: <BookOpen className="w-5 h-5" />, roles: ['student', 'pilot'] },
+  { id: 'content', label: 'Content', icon: <FolderOpen className="w-5 h-5" /> },
   { id: 'users', label: 'User Management', icon: <Users className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
-  { id: 'organizations', label: 'Organizations', icon: <Building2 className="w-5 h-5" />, roles: ['admin'] },
-  { id: 'tracking', label: 'ATPL Tracking', icon: <ClipboardList className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, roles: ['admin', 'org_admin', 'instructor'] },
+  { id: 'tools', label: 'Tools', icon: <Wrench className="w-5 h-5" /> },
   { id: 'logbook', label: 'Logbook', icon: <BookOpenCheck className="w-5 h-5" /> },
   { id: 'admin-logbooks', label: 'User Logbooks', icon: <BookOpenCheck className="w-5 h-5" />, roles: ['admin', 'org_admin'] },
   { id: 'audit-logs', label: 'Audit Logs', icon: <Shield className="w-5 h-5" />, roles: ['admin'] },
@@ -40,7 +37,7 @@ const adminNavItems: NavItem[] = [
 export default function Sidebar({ currentPage, onNavigate, isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
 
-  const filteredItems = adminNavItems.filter(item => {
+  const filteredItems = navItems.filter(item => {
     if (!item.roles) return true;
     return user && item.roles.includes(user.role);
   });
@@ -60,7 +57,7 @@ export default function Sidebar({ currentPage, onNavigate, isOpen, onClose }: Si
           <img src="/logo.svg" alt="Aviation Learning" className="w-9 h-9 rounded-lg" />
           <div>
             <h1 className="font-bold text-sm">Aviation Learning</h1>
-            <p className="text-xs text-white/50">v1.0</p>
+            <p className="text-xs text-white/50">v2.0</p>
           </div>
         </div>
         <button onClick={onClose} className="lg:hidden p-1 hover:bg-white/10 rounded">
@@ -77,15 +74,24 @@ export default function Sidebar({ currentPage, onNavigate, isOpen, onClose }: Si
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{user.firstName} {user.lastName}</p>
-              <span className={`badge text-[10px] mt-0.5 ${
-                user.role === 'admin' ? 'bg-red-500/20 text-red-200' :
-                user.role === 'org_admin' ? 'bg-purple-500/20 text-purple-200' :
-                user.role === 'instructor' ? 'bg-green-500/20 text-green-200' :
-                user.role === 'pilot' ? 'bg-indigo-500/20 text-indigo-200' :
-                'bg-blue-500/20 text-blue-200'
-              }`}>
-                {getRoleLabel(user.role)}
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`badge text-[10px] ${
+                  user.role === 'admin' ? 'bg-red-500/20 text-red-200' :
+                  user.role === 'org_admin' ? 'bg-purple-500/20 text-purple-200' :
+                  user.role === 'instructor' ? 'bg-green-500/20 text-green-200' :
+                  user.role === 'pilot' ? 'bg-indigo-500/20 text-indigo-200' :
+                  'bg-blue-500/20 text-blue-200'
+                }`}>
+                  {getRoleLabel(user.role)}
+                </span>
+                <span className={`badge text-[10px] ${
+                  (user as any).subscriptionTier === 'premium'
+                    ? 'bg-yellow-500/20 text-yellow-200'
+                    : 'bg-white/10 text-white/50'
+                }`}>
+                  {(user as any).subscriptionTier === 'premium' ? 'PREMIUM' : 'BASIC'}
+                </span>
+              </div>
             </div>
           </div>
         </div>

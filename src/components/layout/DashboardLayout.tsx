@@ -5,20 +5,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import DashboardHome from '@/components/dashboard/DashboardHome';
-import CoursesView from '@/components/dashboard/CoursesView';
-import AdminCoursesView from '@/components/dashboard/AdminCoursesView';
 import AdminUsersView from '@/components/dashboard/AdminUsersView';
-import AdminOrgsView from '@/components/dashboard/AdminOrgsView';
 import SettingsView from '@/components/dashboard/SettingsView';
 import ProfileView from '@/components/dashboard/ProfileView';
-import AdminAnalyticsView from '@/components/dashboard/AdminAnalyticsView';
-import StudentTrackingView from '@/components/dashboard/StudentTrackingView';
 import AuditLogsView from '@/components/dashboard/AuditLogsView';
 import BugReportsView from '@/components/dashboard/BugReportsView';
 import LogbookPageWrapper from '@/components/dashboard/LogbookPageWrapper';
 import AdminLogbookView from '@/components/dashboard/AdminLogbookView';
+import ContentBrowserView from '@/components/dashboard/ContentBrowserView';
+import ToolsView from '@/components/dashboard/ToolsView';
 
-export type PageId = 'dashboard' | 'content' | 'courses' | 'users' | 'organizations' | 'analytics' | 'tracking' | 'audit-logs' | 'bug-reports' | 'logbook' | 'admin-logbooks' | 'settings' | 'profile';
+export type PageId = 'dashboard' | 'content' | 'users' | 'audit-logs' | 'bug-reports' | 'logbook' | 'admin-logbooks' | 'tools' | 'settings' | 'profile';
 
 export default function DashboardLayout() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
@@ -33,17 +30,9 @@ export default function DashboardLayout() {
       case 'dashboard':
         return <DashboardHome />;
       case 'content':
-        return <AdminCoursesView />;
-      case 'courses':
-        return <CoursesView />;
+        return <ContentBrowserView />;
       case 'users':
         return <AdminUsersView />;
-      case 'organizations':
-        return <AdminOrgsView />;
-      case 'analytics':
-        return <AdminAnalyticsView />;
-      case 'tracking':
-        return <StudentTrackingView />;
       case 'audit-logs':
         return <AuditLogsView />;
       case 'bug-reports':
@@ -52,6 +41,8 @@ export default function DashboardLayout() {
         return <LogbookPageWrapper />;
       case 'admin-logbooks':
         return <AdminLogbookView />;
+      case 'tools':
+        return <ToolsView />;
       case 'settings':
         return <SettingsView />;
       case 'profile':
@@ -70,7 +61,6 @@ export default function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -78,7 +68,6 @@ export default function DashboardLayout() {
         />
       )}
 
-      {/* Sidebar */}
       <Sidebar
         currentPage={currentPage}
         onNavigate={(page) => {
@@ -89,7 +78,6 @@ export default function DashboardLayout() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
         <TopBar
           onMenuToggle={() => setSidebarOpen(true)}
